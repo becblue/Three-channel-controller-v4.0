@@ -135,11 +135,17 @@ int main(void)
   
   // Test 5: Combined test
   printf("\r\n=== Combined Test ===\r\n");
+  HAL_Delay(10);  // Add delay to prevent buffer overflow
+  
   UART_PrintTimestamp();
-  printf("[SYSTEM] Starting Phase 2 validation\r\n");
-  UART_Log("INFO", "All UART functions working correctly");
+  printf("[SYSTEM] Phase 2 validation started\r\n");
+  HAL_Delay(10);
+  
+  UART_Log("INFO", "All functions working OK");
+  HAL_Delay(10);
   
   printf("\r\n========== Phase 2 Test PASS ==========\r\n\r\n");
+  HAL_Delay(10);
 
   /* USER CODE END 2 */
 
