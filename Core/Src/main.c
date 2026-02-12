@@ -101,7 +101,6 @@ int main(void)
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
   
-  // 闂傚倸鍊搁崯鎶藉春閺嶎収鏁婇柨鐕傛嫹0婵犵數鍋炲ḿ娆擃敄閸儲鍎婃い鏍仦閺咁剚鎱ㄥ鍡椾函妞も晩鍋婇弻娑樷枎濞嗘垵鍩岄梺缁樻煛閸嬫捇姊洪崫鍕⒈闁告挾鍠栭崺鈧い鎺嶈兌閻擃垰菐閸パ嶅伐闂囧鎮楅敐搴″箻婵¤鎷�
   // Phase 2 Test: UART Enhanced Functions
   printf("\r\n========== Phase 2 Test ==========\r\n");
   printf("Testing UART enhanced functions...\r\n\r\n");
@@ -151,7 +150,6 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     
-    // 闂傚倸鍊搁崯鎶藉春閺嶎収鏁婇柨鐕傛嫹0婵犵數鍋炲ḿ娆擃敄閸儲鍎婃い鏍仦閺咁剚鎱ㄥ鍡楀箻婵″眰鍔庣槐鎺撳緞鐎ｎ亞鐟ㄩ悷婊勬緲閸婂潡寮婚崨顔藉濡炲瀵掓导鍥р攽閻愬弶顥戦柍褜鍓欑壕顓熶繆閸ヮ剚鍋ｅΔ锔藉閻濐亞绱掓径灞藉幋妤犵偘绶氶弫鎾绘晸閿燂拷
     // Phase 2 Test: Heartbeat with timestamp every 5 seconds
     UART_PrintTimestamp();
     printf("System Running - Phase 2 Test OK\r\n");
