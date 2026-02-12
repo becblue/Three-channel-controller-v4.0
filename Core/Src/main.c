@@ -104,6 +104,13 @@ int main(void)
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
   
+  // Basic UART test first
+  HAL_UART_Transmit(&huart1, (uint8_t*)"UART Test Start\r\n", 17, 100);
+  HAL_Delay(100);
+  
+  printf("Printf Test OK\r\n");
+  HAL_Delay(100);
+  
   // Phase 4 Test: Temperature Monitoring and Fan Control
   printf("\r\n========== Phase 4 Test ==========\r\n");
   printf("Testing temperature module...\r\n\r\n");

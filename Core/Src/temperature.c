@@ -43,8 +43,22 @@ void Temperature_Init(void)
     filter_index = 0;
     filter_ready = false;
     
-    HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_dma_buffer, TEMP_CHANNEL_COUNT);
-    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+    // ADC calibration (required for STM32F1)
+    HAL_ADCEx_Calibration_Start(&hadc1);
+    
+    // Start ADC+DMA
+    if (HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_dma_buffer, TEMP_CHANNEL_COUNT) != HAL_OK)
+    {
+        printf("ERROR: ADC+DMA start failed\r\n");
+        return;
+    }
+    
+    // Start PWM
+    if (HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1) != HAL_OK)
+    {
+        printf("ERROR: TIM3 PWM start failed\r\n");
+        return;
+    }
     
     temp_manager.fan_speed = FAN_SPEED_NORMAL;
     Temperature_SetFanSpeed(FAN_SPEED_NORMAL);
