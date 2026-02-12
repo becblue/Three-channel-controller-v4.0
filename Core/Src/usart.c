@@ -21,6 +21,7 @@
 #include "usart.h"
 
 /* USER CODE BEGIN 0 */
+#include <stdio.h>
 
 /* USER CODE END 0 */
 
@@ -195,5 +196,30 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 }
 
 /* USER CODE BEGIN 1 */
+
+/**
+ * @brief  重定向printf到USART3
+ * @note   需要在Keil设置中勾选"Use MicroLIB"
+ * @param  ch: 要发送的字符
+ * @param  f: 文件指针（未使用）
+ * @retval 发送的字符
+ */
+int fputc(int ch, FILE *f)
+{
+    HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+    return ch;
+}
+
+/**
+ * @brief  重定向getchar（可选）
+ * @param  f: 文件指针（未使用）
+ * @retval 接收的字符
+ */
+int fgetc(FILE *f)
+{
+    uint8_t ch = 0;
+    HAL_UART_Receive(&huart3, &ch, 1, HAL_MAX_DELAY);
+    return ch;
+}
 
 /* USER CODE END 1 */
