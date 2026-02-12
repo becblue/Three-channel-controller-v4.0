@@ -29,6 +29,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "common_def.h"
+#include "ntc_table.h"
+#include <stdlib.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -101,50 +103,65 @@ int main(void)
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
   
-  // 阶段2测试：UART增强功能
-  // Phase 2 Test: UART Enhanced Functions
-  printf("\r\n========== Phase 2 Test ==========\r\n");
-  printf("Testing UART enhanced functions...\r\n\r\n");
+  // 阶段3测试：NTC查表模块
+  // Phase 3 Test: NTC Lookup Table Module
+  printf("\r\n========== Phase 3 Test ==========\r\n");
+  printf("Testing NTC lookup table module...\r\n\r\n");
   
-  // Test 1: printf redirection (basic)
-  printf("=== printf Test ===\r\n");
-  printf("Integer: %d\r\n", 12345);
-  printf("Hex: 0x%X\r\n", 0xABCD);
-  printf("Float: %.2f\r\n", 3.1415f);
-  printf("String: %s\r\n", "UART Test OK");
-  
-  // Test 2: UART_Printf function
-  printf("\r\n=== UART_Printf Test ===\r\n");
-  UART_Printf("This is UART_Printf test\r\n");
-  UART_Printf("Integer: %d, Hex: 0x%X\r\n", 999, 0xFF);
-  
-  // Test 3: UART_PrintTimestamp function
-  printf("\r\n=== Timestamp Test ===\r\n");
-  UART_PrintTimestamp();
-  printf("System initialized\r\n");
-  HAL_Delay(100);
-  UART_PrintTimestamp();
-  printf("100ms delay passed\r\n");
-  
-  // Test 4: UART_Log function
-  printf("\r\n=== Log Function Test ===\r\n");
-  UART_Log("INFO", "UART module initialized");
-  UART_Log("WARNING", "This is a warning test");
-  UART_Log("ERROR", "This is an error test");
-  UART_Log("DEBUG", "Debug message test");
-  
-  // Test 5: Combined test
-  printf("\r\n=== Combined Test ===\r\n");
-  HAL_Delay(10);  // Add delay to prevent buffer overflow
-  
-  UART_PrintTimestamp();
-  printf("[SYSTEM] Phase 2 validation started\r\n");
+  // Test 1: Module initialization
+  NTC_Init();
+  printf("\r\n");
   HAL_Delay(10);
   
-  UART_Log("INFO", "All functions working OK");
+  // Test 2: Print lookup table
+  printf("=== NTC Lookup Table ===\r\n");
+  NTC_PrintTable();
   HAL_Delay(10);
   
-  printf("\r\n========== Phase 2 Test PASS ==========\r\n\r\n");
+  // Test 3: Test ADC to temperature conversion
+  printf("=== ADC to Temperature Conversion Test ===\r\n");
+  uint16_t test_adc[] = {3900, 3500, 3000, 2500, 2000, 1500, 1000, 500, 100, 10};
+  
+  for(int i = 0; i < 10; i++)
+  {
+      int16_t temp = NTC_GetTemperature(test_adc[i]);
+      printf("ADC: %4d -> Temp: %4d.%d C", 
+             test_adc[i], 
+             temp/10, 
+             abs(temp%10));
+      
+      // 标记重要温度点
+      if (temp == 350) printf("  [35C Threshold]");
+      else if (temp == 600) printf("  [60C Threshold]");
+      
+      printf("\r\n");
+      HAL_Delay(5);
+  }
+  printf("\r\n");
+  
+  // Test 4: Boundary test
+  printf("=== Boundary Test ===\r\n");
+  printf("ADC: 4095 (Max)  -> Temp: %4d.%d C\r\n", 
+         NTC_GetTemperature(4095)/10, abs(NTC_GetTemperature(4095)%10));
+  printf("ADC:    0 (Min)  -> Temp: %4d.%d C\r\n", 
+         NTC_GetTemperature(0)/10, abs(NTC_GetTemperature(0)%10));
+  printf("\r\n");
+  HAL_Delay(10);
+  
+  // Test 5: Interpolation accuracy test
+  printf("=== Interpolation Accuracy Test ===\r\n");
+  // 25C对应ADC约1975，测试附近的值
+  uint16_t test_25c[] = {1980, 1975, 1970, 1965, 1960};
+  for(int i = 0; i < 5; i++)
+  {
+      int16_t temp = NTC_GetTemperature(test_25c[i]);
+      printf("ADC: %4d -> Temp: %3d.%d C\r\n", 
+             test_25c[i], temp/10, abs(temp%10));
+      HAL_Delay(5);
+  }
+  printf("\r\n");
+  
+  printf("========== Phase 3 Test PASS ==========\r\n\r\n");
   HAL_Delay(10);
 
   /* USER CODE END 2 */
@@ -157,10 +174,10 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     
-    // 阶段2测试：带时间戳的心跳消息（每5秒）
-    // Phase 2 Test: Heartbeat with timestamp every 5 seconds
+    // 阶段3测试：心跳消息（每5秒）
+    // Phase 3 Test: Heartbeat every 5 seconds
     UART_PrintTimestamp();
-    printf("System Running - Phase 2 Test OK\r\n");
+    printf("System Running - Phase 3 Test OK\r\n");
     HAL_Delay(5000);
   }
   /* USER CODE END 3 */
