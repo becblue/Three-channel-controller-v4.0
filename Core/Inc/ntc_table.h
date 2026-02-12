@@ -98,9 +98,10 @@ void NTC_PrintTable(void);
 
 /**
  * @brief  获取查表数组指针（调试用）
+ * @param  size: 输出查表大小
  * @retval 查表数组指针
  */
-const NTC_Table_t* NTC_GetTable(void);
+const NTC_Table_t* NTC_GetTable(uint8_t *size);
 
 #ifdef __cplusplus
 }
