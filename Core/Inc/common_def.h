@@ -192,10 +192,9 @@ typedef enum
 
 /**
  * @brief 位操作宏
+ * 注意：SET_BIT、CLEAR_BIT、READ_BIT已在stm32f1xx.h中定义，无需重复定义
+ * 这里只定义HAL库未提供的TOGGLE_BIT宏
  */
-#define SET_BIT(reg, bit)       ((reg) |= (bit))
-#define CLEAR_BIT(reg, bit)     ((reg) &= ~(bit))
-#define READ_BIT(reg, bit)      ((reg) & (bit))
 #define TOGGLE_BIT(reg, bit)    ((reg) ^= (bit))
 
 /**

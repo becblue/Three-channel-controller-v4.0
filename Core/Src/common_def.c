@@ -39,23 +39,23 @@ const char* CommonDef_GetErrorString(ErrorType_e error_type)
 {
     switch(error_type)
     {
-        case ERROR_TYPE_NONE: return "无异常";
-        case ERROR_TYPE_A:    return "A-使能冲突";
-        case ERROR_TYPE_B:    return "B-K1_1_STA异常";
-        case ERROR_TYPE_C:    return "C-K2_1_STA异常";
-        case ERROR_TYPE_D:    return "D-K3_1_STA异常";
-        case ERROR_TYPE_E:    return "E-K1_2_STA异常";
-        case ERROR_TYPE_F:    return "F-K2_2_STA异常";
-        case ERROR_TYPE_G:    return "G-K3_2_STA异常";
-        case ERROR_TYPE_H:    return "H-SW1_STA异常";
-        case ERROR_TYPE_I:    return "I-SW2_STA异常";
-        case ERROR_TYPE_J:    return "J-SW3_STA异常";
-        case ERROR_TYPE_K:    return "K-NTC_1温度异常";
-        case ERROR_TYPE_L:    return "L-NTC_2温度异常";
-        case ERROR_TYPE_M:    return "M-NTC_3温度异常";
-        case ERROR_TYPE_N:    return "N-自检异常";
-        case ERROR_TYPE_O:    return "O-电源监控异常";
-        default:              return "未知异常";
+        case ERROR_TYPE_NONE: return "NONE";
+        case ERROR_TYPE_A:    return "A-Enable Conflict";
+        case ERROR_TYPE_B:    return "B-K1_1_STA Error";
+        case ERROR_TYPE_C:    return "C-K2_1_STA Error";
+        case ERROR_TYPE_D:    return "D-K3_1_STA Error";
+        case ERROR_TYPE_E:    return "E-K1_2_STA Error";
+        case ERROR_TYPE_F:    return "F-K2_2_STA Error";
+        case ERROR_TYPE_G:    return "G-K3_2_STA Error";
+        case ERROR_TYPE_H:    return "H-SW1_STA Error";
+        case ERROR_TYPE_I:    return "I-SW2_STA Error";
+        case ERROR_TYPE_J:    return "J-SW3_STA Error";
+        case ERROR_TYPE_K:    return "K-NTC_1 Temp Error";
+        case ERROR_TYPE_L:    return "L-NTC_2 Temp Error";
+        case ERROR_TYPE_M:    return "M-NTC_3 Temp Error";
+        case ERROR_TYPE_N:    return "N-SelfTest Error";
+        case ERROR_TYPE_O:    return "O-Power Error";
+        default:              return "Unknown Error";
     }
 }
 
@@ -68,11 +68,11 @@ const char* CommonDef_GetChannelString(Channel_e channel)
 {
     switch(channel)
     {
-        case CHANNEL_NONE: return "全部关断";
-        case CHANNEL_1:    return "通道1";
-        case CHANNEL_2:    return "通道2";
-        case CHANNEL_3:    return "通道3";
-        default:           return "未知通道";
+        case CHANNEL_NONE: return "CH_NONE";
+        case CHANNEL_1:    return "CH_1";
+        case CHANNEL_2:    return "CH_2";
+        case CHANNEL_3:    return "CH_3";
+        default:           return "CH_Unknown";
     }
 }
 
@@ -85,12 +85,12 @@ const char* CommonDef_GetSystemStateString(SystemState_e state)
 {
     switch(state)
     {
-        case SYSTEM_STATE_INIT:      return "初始化";
-        case SYSTEM_STATE_LOGO:      return "LOGO显示";
-        case SYSTEM_STATE_SELF_TEST: return "系统自检";
-        case SYSTEM_STATE_RUNNING:   return "正常运行";
-        case SYSTEM_STATE_ERROR:     return "异常状态";
-        default:                     return "未知状态";
+        case SYSTEM_STATE_INIT:      return "INIT";
+        case SYSTEM_STATE_LOGO:      return "LOGO";
+        case SYSTEM_STATE_SELF_TEST: return "SELF_TEST";
+        case SYSTEM_STATE_RUNNING:   return "RUNNING";
+        case SYSTEM_STATE_ERROR:     return "ERROR";
+        default:                     return "UNKNOWN";
     }
 }
 
@@ -113,43 +113,43 @@ void CommonDef_PrintConfig(void)
 {
     DEBUG_PRINTF("\r\n");
     DEBUG_PRINTF("========================================\r\n");
-    DEBUG_PRINTF("    三通道切换箱控制系统 v4.0\r\n");
+    DEBUG_PRINTF("  Three-Channel Controller v4.0\r\n");
     DEBUG_PRINTF("========================================\r\n");
     DEBUG_PRINTF("\r\n");
     
-    DEBUG_PRINTF("【系统配置信息】\r\n");
-    DEBUG_PRINTF("MCU型号: STM32F103RCT6\r\n");
-    DEBUG_PRINTF("系统主频: 72MHz\r\n");
-    DEBUG_PRINTF("外部晶振: 8MHz HSE\r\n");
+    DEBUG_PRINTF("=== System Configuration ===\r\n");
+    DEBUG_PRINTF("MCU: STM32F103RCT6\r\n");
+    DEBUG_PRINTF("Core Freq: 72MHz\r\n");
+    DEBUG_PRINTF("HSE Clock: 8MHz\r\n");
     DEBUG_PRINTF("\r\n");
     
-    DEBUG_PRINTF("【温度控制参数】\r\n");
-    DEBUG_PRINTF("正常温度阈值: %.1f°C\r\n", TEMP_TO_CELSIUS(TEMP_THRESHOLD_LOW));
-    DEBUG_PRINTF("过温告警阈值: %.1f°C\r\n", TEMP_TO_CELSIUS(TEMP_THRESHOLD_HIGH));
-    DEBUG_PRINTF("温度回差: %.1f°C\r\n", TEMP_TO_CELSIUS(TEMP_HYSTERESIS));
-    DEBUG_PRINTF("正常风扇PWM: %d%%\r\n", FAN_PWM_NORMAL);
-    DEBUG_PRINTF("高温风扇PWM: %d%%\r\n", FAN_PWM_HIGH);
+    DEBUG_PRINTF("=== Temperature Control ===\r\n");
+    DEBUG_PRINTF("Normal Temp Threshold: %.1f C\r\n", TEMP_TO_CELSIUS(TEMP_THRESHOLD_LOW));
+    DEBUG_PRINTF("Overheat Threshold: %.1f C\r\n", TEMP_TO_CELSIUS(TEMP_THRESHOLD_HIGH));
+    DEBUG_PRINTF("Temp Hysteresis: %.1f C\r\n", TEMP_TO_CELSIUS(TEMP_HYSTERESIS));
+    DEBUG_PRINTF("Fan PWM (Normal): %d%%\r\n", FAN_PWM_NORMAL);
+    DEBUG_PRINTF("Fan PWM (High): %d%%\r\n", FAN_PWM_HIGH);
     DEBUG_PRINTF("\r\n");
     
-    DEBUG_PRINTF("【时间参数】\r\n");
-    DEBUG_PRINTF("LOGO显示时间: %dms\r\n", TIME_LOGO_DISPLAY);
-    DEBUG_PRINTF("系统自检时间: %dms\r\n", TIME_SELF_TEST);
-    DEBUG_PRINTF("继电器脉冲时长: %dms\r\n", TIME_RELAY_PULSE);
-    DEBUG_PRINTF("防抖检测间隔: %dms\r\n", TIME_DEBOUNCE_INTERVAL);
-    DEBUG_PRINTF("防抖检测次数: %d次\r\n", TIME_DEBOUNCE_COUNT);
+    DEBUG_PRINTF("=== Timing Parameters ===\r\n");
+    DEBUG_PRINTF("LOGO Display: %dms\r\n", TIME_LOGO_DISPLAY);
+    DEBUG_PRINTF("Self-Test: %dms\r\n", TIME_SELF_TEST);
+    DEBUG_PRINTF("Relay Pulse: %dms\r\n", TIME_RELAY_PULSE);
+    DEBUG_PRINTF("Debounce Interval: %dms\r\n", TIME_DEBOUNCE_INTERVAL);
+    DEBUG_PRINTF("Debounce Count: %d times\r\n", TIME_DEBOUNCE_COUNT);
     DEBUG_PRINTF("\r\n");
     
-    DEBUG_PRINTF("【异常类型定义】\r\n");
-    DEBUG_PRINTF("A - 使能冲突异常\r\n");
-    DEBUG_PRINTF("B~G - 继电器状态反馈异常\r\n");
-    DEBUG_PRINTF("H~J - 接触器状态反馈异常\r\n");
-    DEBUG_PRINTF("K~M - 温度异常\r\n");
-    DEBUG_PRINTF("N - 自检异常\r\n");
-    DEBUG_PRINTF("O - 电源监控异常\r\n");
+    DEBUG_PRINTF("=== Error Types ===\r\n");
+    DEBUG_PRINTF("A - Enable Conflict\r\n");
+    DEBUG_PRINTF("B~G - Relay Feedback Error\r\n");
+    DEBUG_PRINTF("H~J - Switch Feedback Error\r\n");
+    DEBUG_PRINTF("K~M - Temperature Error\r\n");
+    DEBUG_PRINTF("N - Self-Test Error\r\n");
+    DEBUG_PRINTF("O - Power Monitor Error\r\n");
     DEBUG_PRINTF("\r\n");
     
-    DEBUG_PRINTF("【性能指标】\r\n");
-    DEBUG_PRINTF("系统响应时间要求: <%dms\r\n", SYSTEM_RESPONSE_TIME);
+    DEBUG_PRINTF("=== Performance ===\r\n");
+    DEBUG_PRINTF("Response Time: <%dms\r\n", SYSTEM_RESPONSE_TIME);
     DEBUG_PRINTF("\r\n");
     
     DEBUG_PRINTF("========================================\r\n");
