@@ -101,6 +101,7 @@ int main(void)
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
   
+  // 阶段2测试：UART增强功能
   // Phase 2 Test: UART Enhanced Functions
   printf("\r\n========== Phase 2 Test ==========\r\n");
   printf("Testing UART enhanced functions...\r\n\r\n");
@@ -150,6 +151,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     
+    // 阶段2测试：带时间戳的心跳消息（每5秒）
     // Phase 2 Test: Heartbeat with timestamp every 5 seconds
     UART_PrintTimestamp();
     printf("System Running - Phase 2 Test OK\r\n");
