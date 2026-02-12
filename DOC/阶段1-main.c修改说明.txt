@@ -1,0 +1,61 @@
+阶段1：main.c手动修改说明
+================================
+
+由于文件编码问题，请手动修改main.c文件：
+
+步骤1：在第31行（USER CODE BEGIN Includes区域）添加：
+-------------------------------------------------------
+#include "common_def.h"
+
+步骤2：将第102-108行的USER CODE BEGIN 2区域替换为：
+-------------------------------------------------------
+  /* USER CODE BEGIN 2 */
+  
+  // Phase 1 Test: Common Definition Module
+  DEBUG_PRINTF("\r\n========== Phase 1 Test ==========\r\n");
+  DEBUG_PRINTF("Common Definition Module Test\r\n");
+  DEBUG_PRINTF("==================================\r\n\r\n");
+  
+  // Initialize common definition module
+  CommonDef_Init();
+  
+  // Print system configuration
+  CommonDef_PrintConfig();
+  
+  // Test enum definitions
+  Channel_e ch = CHANNEL_1;
+  DEBUG_PRINTF("Channel enum test: %s\r\n", CommonDef_GetChannelString(ch));
+  
+  ErrorType_e err = ERROR_TYPE_A;
+  DEBUG_PRINTF("Error type test: %s\r\n", CommonDef_GetErrorString(err));
+  
+  SystemState_e state = SYSTEM_STATE_RUNNING;
+  DEBUG_PRINTF("System state test: %s\r\n\r\n", CommonDef_GetSystemStateString(state));
+  
+  DEBUG_PRINTF("========== Phase 1 Test PASS ==========\r\n\r\n");
+
+  /* USER CODE END 2 */
+
+步骤3：将第116-120行的USER CODE BEGIN 3区域替换为：
+-------------------------------------------------------
+    /* USER CODE BEGIN 3 */
+    
+    // Phase 1 Test: Heartbeat every 5 seconds
+    DEBUG_PRINTF("[%lu ms] System Running - Phase 1 Test OK\r\n", HAL_GetTick());
+    HAL_Delay(5000);
+  }
+  /* USER CODE END 3 */
+
+步骤4：编译工程（F7），预期结果：
+-------------------------------------------------------
+- 0 Error, 0 Warning
+- 成功生成.axf和.hex文件
+
+步骤5：下载程序（F8）并查看串口输出
+-------------------------------------------------------
+预期输出请参考：DOC/阶段1测试指导.md
+
+注意事项：
+1. 保存文件时请使用UTF-8编码
+2. 只修改USER CODE区域的内容
+3. 不要删除或修改USER CODE的标记注释

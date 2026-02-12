@@ -28,7 +28,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "common_def.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
