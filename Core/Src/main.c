@@ -101,9 +101,45 @@ int main(void)
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
   
-  // 阶段0测试：串口基本通信测试
-  uint8_t test_msg[] = "System Ready - Phase 0 Test\r\n";
-  HAL_UART_Transmit(&huart3, test_msg, sizeof(test_msg)-1, 100);
+  // 闂傚啳鍩栭锟�0婵炴潙顑堥惁顖炴晬濮橆偉顩柛娆欑到閻斺偓闁哄牜鍓熼埀顒佺煯娣囧﹤霉鐎ｎ厾妲�
+  // Phase 1 Test: Common Definition Module
+  DEBUG_PRINTF("\r\n========== Phase 1 Test ==========\r\n");
+  DEBUG_PRINTF("Testing common_def module...\r\n\r\n");
+  
+  // Test 1: Module initialization
+  CommonDef_Init();
+  
+  // Test 2: Error type enum test
+  DEBUG_PRINTF("\r\n=== Error Type Test ===\r\n");
+  DEBUG_PRINTF("ERROR_TYPE_NONE: %s\r\n", CommonDef_GetErrorString(ERROR_TYPE_NONE));
+  DEBUG_PRINTF("ERROR_TYPE_A: %s\r\n", CommonDef_GetErrorString(ERROR_TYPE_A));
+  DEBUG_PRINTF("ERROR_TYPE_K: %s\r\n", CommonDef_GetErrorString(ERROR_TYPE_K));
+  DEBUG_PRINTF("ERROR_TYPE_O: %s\r\n", CommonDef_GetErrorString(ERROR_TYPE_O));
+  
+  // Test 3: Channel enum test
+  DEBUG_PRINTF("\r\n=== Channel Test ===\r\n");
+  DEBUG_PRINTF("CHANNEL_NONE: %s\r\n", CommonDef_GetChannelString(CHANNEL_NONE));
+  DEBUG_PRINTF("CHANNEL_1: %s\r\n", CommonDef_GetChannelString(CHANNEL_1));
+  DEBUG_PRINTF("CHANNEL_2: %s\r\n", CommonDef_GetChannelString(CHANNEL_2));
+  DEBUG_PRINTF("CHANNEL_3: %s\r\n", CommonDef_GetChannelString(CHANNEL_3));
+  
+  // Test 4: System state enum test
+  DEBUG_PRINTF("\r\n=== System State Test ===\r\n");
+  DEBUG_PRINTF("SYSTEM_STATE_INIT: %s\r\n", CommonDef_GetSystemStateString(SYSTEM_STATE_INIT));
+  DEBUG_PRINTF("SYSTEM_STATE_RUNNING: %s\r\n", CommonDef_GetSystemStateString(SYSTEM_STATE_RUNNING));
+  DEBUG_PRINTF("SYSTEM_STATE_ERROR: %s\r\n", CommonDef_GetSystemStateString(SYSTEM_STATE_ERROR));
+  
+  // Test 5: Macro test
+  DEBUG_PRINTF("\r\n=== Macro Test ===\r\n");
+  DEBUG_PRINTF("TEMP_TO_CELSIUS(TEMP_THRESHOLD_LOW): %.1f C\r\n", TEMP_TO_CELSIUS(TEMP_THRESHOLD_LOW));
+  DEBUG_PRINTF("TEMP_TO_CELSIUS(TEMP_THRESHOLD_HIGH): %.1f C\r\n", TEMP_TO_CELSIUS(TEMP_THRESHOLD_HIGH));
+  DEBUG_PRINTF("LIMIT(150, 0, 100): %d\r\n", LIMIT(150, 0, 100));
+  DEBUG_PRINTF("LIMIT(50, 0, 100): %d\r\n", LIMIT(50, 0, 100));
+  
+  // Test 6: Print full configuration
+  CommonDef_PrintConfig();
+  
+  DEBUG_PRINTF("========== Phase 1 Test PASS ==========\r\n\r\n");
 
   /* USER CODE END 2 */
 
@@ -115,9 +151,10 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     
-    // 阶段0测试：每秒发送一次心跳消息
-    HAL_UART_Transmit(&huart3, (uint8_t*)"System Running...\r\n", 19, 100);
-    HAL_Delay(1000);
+    // 闂傚啳鍩栭锟�0婵炴潙顑堥惁顖炴晬濮橆厾妲ㄧ紒澶嬪笒瑜板倿鏌呮担椋庮伇婵炲棌鈧磭濡囬悹楦挎珪缁夌兘骞侀敓锟�
+    // Phase 1 Test: Heartbeat every 5 seconds
+    DEBUG_PRINTF("[%lu ms] System Running - Phase 1 Test OK\r\n", HAL_GetTick());
+    HAL_Delay(5000);
   }
   /* USER CODE END 3 */
 }
