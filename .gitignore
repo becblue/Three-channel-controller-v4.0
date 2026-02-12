@@ -1,0 +1,108 @@
+# STM32 Three-channel Controller Project .gitignore
+# 三通道切换箱控制系统 - Git忽略文件配置
+
+# ====================
+# Keil MDK-ARM 编译输出
+# ====================
+*.uvguix*
+*.bak
+*.dep
+*.map
+*.lst
+*.lnp
+*.d
+*.crf
+*.o
+*.obj
+*.htm
+*.axf
+*.sct
+*.build_log.htm
+*.iex
+*.scvd
+*._ac
+*.tmp
+
+# Keil编译输出目录
+MDK-ARM/Objects/
+MDK-ARM/Listings/
+MDK-ARM/RTE/
+MDK-ARM/*.uvoptx
+MDK-ARM/*.uvguix.*
+MDK-ARM/DebugConfig/*.dbgconf
+
+# ====================
+# 调试器相关文件
+# ====================
+*.jlink
+JLinkLog.txt
+JLinkSettings.ini
+
+# ====================
+# STM32CubeMX临时文件
+# ====================
+*.mxproject.bak
+*.ioc.bak
+.mxproject.bak
+
+# ====================
+# 开发工具临时文件
+# ====================
+# Cursor/VSCode
+.vscode/
+.cursor/tutor/
+
+# ====================
+# Windows系统文件
+# ====================
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# ====================
+# macOS系统文件
+# ====================
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ====================
+# Linux系统文件
+# ====================
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# ====================
+# 日志文件
+# ====================
+*.log
+
+# ====================
+# 备份文件
+# ====================
+*.bak
+*_backup.*
+backup/
+
+# ====================
+# 其他
+# ====================
+# 临时文件夹
+temp/
+tmp/
+
+# ====================
+# 保留的重要文件（不忽略）
+# ====================
+# 确保以下文件被追踪
+!*.ioc
+!.mxproject
+!README.md
+!*.c
+!*.h
+!*.s
+!*.uvprojx
+!*.uvoptx
