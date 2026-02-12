@@ -100,6 +100,10 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
+  
+  // 阶段0测试：串口基本通信测试
+  uint8_t test_msg[] = "System Ready - Phase 0 Test\r\n";
+  HAL_UART_Transmit(&huart3, test_msg, sizeof(test_msg)-1, 100);
 
   /* USER CODE END 2 */
 
@@ -110,6 +114,10 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    
+    // 阶段0测试：每秒发送一次心跳消息
+    HAL_UART_Transmit(&huart3, (uint8_t*)"System Running...\r\n", 19, 100);
+    HAL_Delay(1000);
   }
   /* USER CODE END 3 */
 }
