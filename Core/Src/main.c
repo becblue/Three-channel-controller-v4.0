@@ -101,45 +101,45 @@ int main(void)
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
   
-  // 闂傚啳鍩栭锟�0婵炴潙顑堥惁顖炴晬濮橆偉顩柛娆欑到閻斺偓闁哄牜鍓熼埀顒佺煯娣囧﹤霉鐎ｎ厾妲�
-  // Phase 1 Test: Common Definition Module
-  DEBUG_PRINTF("\r\n========== Phase 1 Test ==========\r\n");
-  DEBUG_PRINTF("Testing common_def module...\r\n\r\n");
+  // 闂傚倸鍊搁崯鎶藉春閺嶎収鏁婇柨鐕傛嫹0婵犵數鍋炲ḿ娆擃敄閸儲鍎婃い鏍仦閺咁剚鎱ㄥ鍡椾函妞も晩鍋婇弻娑樷枎濞嗘垵鍩岄梺缁樻煛閸嬫捇姊洪崫鍕⒈闁告挾鍠栭崺鈧い鎺嶈兌閻擃垰菐閸パ嶅伐闂囧鎮楅敐搴″箻婵¤鎷�
+  // Phase 2 Test: UART Enhanced Functions
+  printf("\r\n========== Phase 2 Test ==========\r\n");
+  printf("Testing UART enhanced functions...\r\n\r\n");
   
-  // Test 1: Module initialization
-  CommonDef_Init();
+  // Test 1: printf redirection (basic)
+  printf("=== printf Test ===\r\n");
+  printf("Integer: %d\r\n", 12345);
+  printf("Hex: 0x%X\r\n", 0xABCD);
+  printf("Float: %.2f\r\n", 3.1415f);
+  printf("String: %s\r\n", "UART Test OK");
   
-  // Test 2: Error type enum test
-  DEBUG_PRINTF("\r\n=== Error Type Test ===\r\n");
-  DEBUG_PRINTF("ERROR_TYPE_NONE: %s\r\n", CommonDef_GetErrorString(ERROR_TYPE_NONE));
-  DEBUG_PRINTF("ERROR_TYPE_A: %s\r\n", CommonDef_GetErrorString(ERROR_TYPE_A));
-  DEBUG_PRINTF("ERROR_TYPE_K: %s\r\n", CommonDef_GetErrorString(ERROR_TYPE_K));
-  DEBUG_PRINTF("ERROR_TYPE_O: %s\r\n", CommonDef_GetErrorString(ERROR_TYPE_O));
+  // Test 2: UART_Printf function
+  printf("\r\n=== UART_Printf Test ===\r\n");
+  UART_Printf("This is UART_Printf test\r\n");
+  UART_Printf("Integer: %d, Hex: 0x%X\r\n", 999, 0xFF);
   
-  // Test 3: Channel enum test
-  DEBUG_PRINTF("\r\n=== Channel Test ===\r\n");
-  DEBUG_PRINTF("CHANNEL_NONE: %s\r\n", CommonDef_GetChannelString(CHANNEL_NONE));
-  DEBUG_PRINTF("CHANNEL_1: %s\r\n", CommonDef_GetChannelString(CHANNEL_1));
-  DEBUG_PRINTF("CHANNEL_2: %s\r\n", CommonDef_GetChannelString(CHANNEL_2));
-  DEBUG_PRINTF("CHANNEL_3: %s\r\n", CommonDef_GetChannelString(CHANNEL_3));
+  // Test 3: UART_PrintTimestamp function
+  printf("\r\n=== Timestamp Test ===\r\n");
+  UART_PrintTimestamp();
+  printf("System initialized\r\n");
+  HAL_Delay(100);
+  UART_PrintTimestamp();
+  printf("100ms delay passed\r\n");
   
-  // Test 4: System state enum test
-  DEBUG_PRINTF("\r\n=== System State Test ===\r\n");
-  DEBUG_PRINTF("SYSTEM_STATE_INIT: %s\r\n", CommonDef_GetSystemStateString(SYSTEM_STATE_INIT));
-  DEBUG_PRINTF("SYSTEM_STATE_RUNNING: %s\r\n", CommonDef_GetSystemStateString(SYSTEM_STATE_RUNNING));
-  DEBUG_PRINTF("SYSTEM_STATE_ERROR: %s\r\n", CommonDef_GetSystemStateString(SYSTEM_STATE_ERROR));
+  // Test 4: UART_Log function
+  printf("\r\n=== Log Function Test ===\r\n");
+  UART_Log("INFO", "UART module initialized");
+  UART_Log("WARNING", "This is a warning test");
+  UART_Log("ERROR", "This is an error test");
+  UART_Log("DEBUG", "Debug message test");
   
-  // Test 5: Macro test
-  DEBUG_PRINTF("\r\n=== Macro Test ===\r\n");
-  DEBUG_PRINTF("TEMP_TO_CELSIUS(TEMP_THRESHOLD_LOW): %.1f C\r\n", TEMP_TO_CELSIUS(TEMP_THRESHOLD_LOW));
-  DEBUG_PRINTF("TEMP_TO_CELSIUS(TEMP_THRESHOLD_HIGH): %.1f C\r\n", TEMP_TO_CELSIUS(TEMP_THRESHOLD_HIGH));
-  DEBUG_PRINTF("LIMIT(150, 0, 100): %d\r\n", LIMIT(150, 0, 100));
-  DEBUG_PRINTF("LIMIT(50, 0, 100): %d\r\n", LIMIT(50, 0, 100));
+  // Test 5: Combined test
+  printf("\r\n=== Combined Test ===\r\n");
+  UART_PrintTimestamp();
+  printf("[SYSTEM] Starting Phase 2 validation\r\n");
+  UART_Log("INFO", "All UART functions working correctly");
   
-  // Test 6: Print full configuration
-  CommonDef_PrintConfig();
-  
-  DEBUG_PRINTF("========== Phase 1 Test PASS ==========\r\n\r\n");
+  printf("\r\n========== Phase 2 Test PASS ==========\r\n\r\n");
 
   /* USER CODE END 2 */
 
@@ -151,9 +151,10 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     
-    // 闂傚啳鍩栭锟�0婵炴潙顑堥惁顖炴晬濮橆厾妲ㄧ紒澶嬪笒瑜板倿鏌呮担椋庮伇婵炲棌鈧磭濡囬悹楦挎珪缁夌兘骞侀敓锟�
-    // Phase 1 Test: Heartbeat every 5 seconds
-    DEBUG_PRINTF("[%lu ms] System Running - Phase 1 Test OK\r\n", HAL_GetTick());
+    // 闂傚倸鍊搁崯鎶藉春閺嶎収鏁婇柨鐕傛嫹0婵犵數鍋炲ḿ娆擃敄閸儲鍎婃い鏍仦閺咁剚鎱ㄥ鍡楀箻婵″眰鍔庣槐鎺撳緞鐎ｎ亞鐟ㄩ悷婊勬緲閸婂潡寮婚崨顔藉濡炲瀵掓导鍥р攽閻愬弶顥戦柍褜鍓欑壕顓熶繆閸ヮ剚鍋ｅΔ锔藉閻濐亞绱掓径灞藉幋妤犵偘绶氶弫鎾绘晸閿燂拷
+    // Phase 2 Test: Heartbeat with timestamp every 5 seconds
+    UART_PrintTimestamp();
+    printf("System Running - Phase 2 Test OK\r\n");
     HAL_Delay(5000);
   }
   /* USER CODE END 3 */

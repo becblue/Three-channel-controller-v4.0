@@ -22,6 +22,8 @@
 
 /* USER CODE BEGIN 0 */
 #include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
 
 /* USER CODE END 0 */
 
@@ -220,6 +222,45 @@ int fgetc(FILE *f)
     uint8_t ch = 0;
     HAL_UART_Receive(&huart3, &ch, 1, HAL_MAX_DELAY);
     return ch;
+}
+
+/**
+ * @brief  格式化输出函数
+ * @param  format: 格式化字符串
+ * @param  ...: 可变参数
+ * @note   使用vsnprintf实现，最大支持256字节
+ */
+void UART_Printf(const char *format, ...)
+{
+    char buffer[256];
+    va_list args;
+    
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+    
+    HAL_UART_Transmit(&huart3, (uint8_t*)buffer, strlen(buffer), HAL_MAX_DELAY);
+}
+
+/**
+ * @brief  打印时间戳
+ * @note   基于HAL_GetTick()输出毫秒级时间戳，格式：[xxxxx ms]
+ */
+void UART_PrintTimestamp(void)
+{
+    printf("[%lu ms] ", HAL_GetTick());
+}
+
+/**
+ * @brief  日志输出函数
+ * @param  level: 日志级别字符串（如"INFO", "WARNING", "ERROR"）
+ * @param  msg: 日志消息内容
+ * @note   输出格式：[时间戳][级别] 消息内容
+ */
+void UART_Log(const char *level, const char *msg)
+{
+    UART_PrintTimestamp();
+    printf("[%s] %s\r\n", level, msg);
 }
 
 /* USER CODE END 1 */
