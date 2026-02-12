@@ -30,6 +30,7 @@
 /* USER CODE BEGIN Includes */
 #include "common_def.h"
 #include "ntc_table.h"
+#include "temperature.h"
 #include <stdlib.h>
 /* USER CODE END Includes */
 
@@ -103,65 +104,50 @@ int main(void)
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
   
-  // 阶段3测试：NTC查表模块
-  // Phase 3 Test: NTC Lookup Table Module
-  printf("\r\n========== Phase 3 Test ==========\r\n");
-  printf("Testing NTC lookup table module...\r\n\r\n");
+  // Phase 4 Test: Temperature Monitoring and Fan Control
+  printf("\r\n========== Phase 4 Test ==========\r\n");
+  printf("Testing temperature module...\r\n\r\n");
   
-  // Test 1: Module initialization
-  NTC_Init();
+  // Initialize temperature module
+  Temperature_Init();
   printf("\r\n");
-  HAL_Delay(10);
+  HAL_Delay(100);
   
-  // Test 2: Print lookup table
-  printf("=== NTC Lookup Table ===\r\n");
-  NTC_PrintTable();
-  HAL_Delay(10);
+  // Test for 20 seconds, print every 1 second
+  printf("=== Temperature Monitoring Test (20s) ===\r\n");
+  printf("Time  NTC1(C)  NTC2(C)  NTC3(C)  FAN%%  Status\r\n");
+  printf("----------------------------------------------------\r\n");
   
-  // Test 3: Test ADC to temperature conversion
-  printf("=== ADC to Temperature Conversion Test ===\r\n");
-  uint16_t test_adc[] = {3900, 3500, 3000, 2500, 2000, 1500, 1000, 500, 100, 10};
-  
-  for(int i = 0; i < 10; i++)
+  for(int i = 0; i < 20; i++)
   {
-      int16_t temp = NTC_GetTemperature(test_adc[i]);
-      printf("ADC: %4d -> Temp: %4d.%d C", 
-             test_adc[i], 
-             temp/10, 
-             abs(temp%10));
+      HAL_Delay(1000);
+      Temperature_Update();
       
-      // 标记重要温度点
-      if (temp == 350) printf("  [35C Threshold]");
-      else if (temp == 600) printf("  [60C Threshold]");
+      int16_t t1, t2, t3;
+      Temperature_GetValues(&t1, &t2, &t3);
       
+      printf("[%2ds]  %3d.%d    %3d.%d    %3d.%d    %3d%%  ", 
+             i+1,
+             t1/10, abs(t1%10),
+             t2/10, abs(t2%10),
+             t3/10, abs(t3%10),
+             Temperature_GetFanSpeed());
+      
+      // Print status flags
+      for(int j = 0; j < 3; j++)
+      {
+          uint8_t flag = Temperature_GetOverheatFlag(j);
+          if (flag == TEMP_STATUS_OVERHEAT) printf("!");
+          else if (flag == TEMP_STATUS_WARM) printf("W");
+          else printf("-");
+      }
       printf("\r\n");
-      HAL_Delay(5);
   }
-  printf("\r\n");
   
-  // Test 4: Boundary test
-  printf("=== Boundary Test ===\r\n");
-  printf("ADC: 4095 (Max)  -> Temp: %4d.%d C\r\n", 
-         NTC_GetTemperature(4095)/10, abs(NTC_GetTemperature(4095)%10));
-  printf("ADC:    0 (Min)  -> Temp: %4d.%d C\r\n", 
-         NTC_GetTemperature(0)/10, abs(NTC_GetTemperature(0)%10));
   printf("\r\n");
-  HAL_Delay(10);
+  Temperature_PrintStatus();
   
-  // Test 5: Interpolation accuracy test
-  printf("=== Interpolation Accuracy Test ===\r\n");
-  // 25C对应ADC约1975，测试附近的值
-  uint16_t test_25c[] = {1980, 1975, 1970, 1965, 1960};
-  for(int i = 0; i < 5; i++)
-  {
-      int16_t temp = NTC_GetTemperature(test_25c[i]);
-      printf("ADC: %4d -> Temp: %3d.%d C\r\n", 
-             test_25c[i], temp/10, abs(temp%10));
-      HAL_Delay(5);
-  }
-  printf("\r\n");
-  
-  printf("========== Phase 3 Test PASS ==========\r\n\r\n");
+  printf("========== Phase 4 Test PASS ==========\r\n\r\n");
   HAL_Delay(10);
 
   /* USER CODE END 2 */
@@ -174,11 +160,17 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     
-    // 阶段3测试：心跳消息（每5秒）
-    // Phase 3 Test: Heartbeat every 5 seconds
-    UART_PrintTimestamp();
-    printf("System Running - Phase 3 Test OK\r\n");
+    // Phase 4 Test: Continuous temperature monitoring
     HAL_Delay(5000);
+    Temperature_Update();
+    
+    int16_t t1, t2, t3;
+    Temperature_GetValues(&t1, &t2, &t3);
+    
+    UART_PrintTimestamp();
+    printf("T1:%3d.%dC T2:%3d.%dC T3:%3d.%dC FAN:%d%% - Phase 4 OK\r\n",
+           t1/10, abs(t1%10), t2/10, abs(t2%10), t3/10, abs(t3%10),
+           Temperature_GetFanSpeed());
   }
   /* USER CODE END 3 */
 }
