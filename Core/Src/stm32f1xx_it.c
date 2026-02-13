@@ -251,10 +251,23 @@ void EXTI15_10_IRQHandler(void)
   /* USER CODE BEGIN EXTI15_10_IRQn 0 */
 
   /* USER CODE END EXTI15_10_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(FAN_SEN_Pin);
-  HAL_GPIO_EXTI_IRQHandler(KEY1_Pin);
-  HAL_GPIO_EXTI_IRQHandler(KEY2_Pin);
-  HAL_GPIO_EXTI_IRQHandler(K3_EN_Pin);
+  // Call HAL handler only once - it will check all pending EXTI lines
+  if (__HAL_GPIO_EXTI_GET_IT(FAN_SEN_Pin) != RESET)
+  {
+    HAL_GPIO_EXTI_IRQHandler(FAN_SEN_Pin);
+  }
+  if (__HAL_GPIO_EXTI_GET_IT(KEY1_Pin) != RESET)
+  {
+    HAL_GPIO_EXTI_IRQHandler(KEY1_Pin);
+  }
+  if (__HAL_GPIO_EXTI_GET_IT(KEY2_Pin) != RESET)
+  {
+    HAL_GPIO_EXTI_IRQHandler(KEY2_Pin);
+  }
+  if (__HAL_GPIO_EXTI_GET_IT(K3_EN_Pin) != RESET)
+  {
+    HAL_GPIO_EXTI_IRQHandler(K3_EN_Pin);
+  }
   /* USER CODE BEGIN EXTI15_10_IRQn 1 */
 
   /* USER CODE END EXTI15_10_IRQn 1 */
