@@ -183,6 +183,15 @@ void Temperature_FanPulseISR(void)
  */
 void Temperature_1sHandler(void)
 {
+    // Debug output: show raw pulse count
+    static uint8_t debug_counter = 0;
+    if (debug_counter++ >= 5)  // Print every 5 seconds
+    {
+        printf("[FAN] Pulses/sec: %lu | RPM calculation: (%lu * 60) / %d\r\n", 
+               fan_pulse_count, fan_pulse_count, FAN_PULSE_PER_REV);
+        debug_counter = 0;
+    }
+    
     // Calculate RPM: (pulse_count * 60) / pulses_per_revolution
     temp_manager.fan_rpm = (fan_pulse_count * 60) / FAN_PULSE_PER_REV;
     
