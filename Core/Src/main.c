@@ -32,6 +32,7 @@
 #include "temperature.h"
 #include "oled_display.h"
 #include "alarm_output.h"
+#include "relay_control.h"
 #include <stdlib.h>
 /* USER CODE END Includes */
 
@@ -105,43 +106,43 @@ int main(void)
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
   
-  // 基础UART测试
+  // Test UART output
   HAL_UART_Transmit(&huart1, (uint8_t*)"UART Test Start\r\n", 17, 100);
   HAL_Delay(100);
   
   printf("Printf Test OK\r\n");
   HAL_Delay(100);
   
-  // 初始化温度模块（阶段4 - 在后台持续运行）
+  // Initialize Phase 4 - Temperature Detection and Fan Control
   printf("\r\n[System] Initializing temperature module...\r\n");
   Temperature_Init();
   printf("[System] Temperature module ready\r\n\r\n");
   HAL_Delay(100);
   
-  // 阶段5测试：OLED显示驱动
+  // Phase 5 Test: OLED Display Module
   printf("\r\n========== Phase 5 Test ==========\r\n");
   printf("Testing OLED display module...\r\n\r\n");
   
-  // 初始化OLED
+  // Initialize OLED
   OLED_Init();
   printf("\r\n");
   HAL_Delay(500);
   
-  // 运行OLED测试
+  // Run OLED test
   OLED_Test();
   
   printf("\r\n========== Phase 5 Test PASS ==========\r\n\r\n");
   HAL_Delay(10);
   
-  // 阶段6测试：报警输出控制
+  // Phase 6 Test: Alarm Output Control
   printf("\r\n========== Phase 6 Test ==========\r\n");
   printf("Testing alarm output control module...\r\n\r\n");
   
-  // 初始化报警模块
+  // Initialize alarm module
   Alarm_Init();
   HAL_Delay(500);
   
-  // 测试1：A类异常（1秒脉冲）
+  // Test 1: Type-A error (1s pulse)
   printf("[Test 1] Type-A Error - 1s pulse test\r\n");
   Alarm_SetError(ERROR_TYPE_A);
   Alarm_PrintStatus();
@@ -154,7 +155,7 @@ int main(void)
   printf("  Type-A error cleared\r\n\r\n");
   HAL_Delay(1000);
   
-  // 测试2：B类异常（50ms脉冲）
+  // Test 2: Type-B error (50ms pulse)
   printf("[Test 2] Type-B Error - 50ms pulse test\r\n");
   Alarm_SetError(ERROR_TYPE_B);
   Alarm_PrintStatus();
@@ -167,7 +168,7 @@ int main(void)
   printf("  Type-B error cleared\r\n\r\n");
   HAL_Delay(1000);
   
-  // 测试3：K类异常（持续响）
+  // Test 3: Type-K error (continuous beep)
   printf("[Test 3] Type-K Error - continuous beep test\r\n");
   Alarm_SetError(ERROR_TYPE_K);
   Alarm_PrintStatus();
@@ -180,7 +181,7 @@ int main(void)
   printf("  Type-K error cleared\r\n\r\n");
   HAL_Delay(1000);
   
-  // 测试4：多异常优先级测试
+  // Test 4: Multiple error priority test
   printf("[Test 4] Multiple error priority test\r\n");
   printf("  Set Type-A error (1s pulse)...\r\n");
   Alarm_SetError(ERROR_TYPE_A);
@@ -209,6 +210,49 @@ int main(void)
   
   printf("\r\n========== Phase 6 Test PASS ==========\r\n\r\n");
   HAL_Delay(10);
+  
+  // Phase 7: Relay Control Module Test (Cycle Mode)
+  printf("\r\n========== Phase 7 Test ==========\r\n");
+  printf("Testing relay control module...\r\n\r\n");
+  
+  // TEMPORARY FIX: Force all EN pins to pull-up mode (fix floating/interference issue)
+  GPIO_InitTypeDef test_gpio = {0};
+  
+  // K1_EN (PB9) - force pull-up
+  test_gpio.Pin = K1_EN_Pin;
+  test_gpio.Mode = GPIO_MODE_IT_RISING_FALLING;
+  test_gpio.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(K1_EN_GPIO_Port, &test_gpio);
+  
+  // K2_EN (PB8) - force pull-up
+  test_gpio.Pin = K2_EN_Pin;
+  test_gpio.Mode = GPIO_MODE_IT_RISING_FALLING;
+  test_gpio.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(K2_EN_GPIO_Port, &test_gpio);
+  
+  // K3_EN (PA15) - force pull-up
+  test_gpio.Pin = K3_EN_Pin;
+  test_gpio.Mode = GPIO_MODE_IT_RISING_FALLING;
+  test_gpio.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(K3_EN_GPIO_Port, &test_gpio);
+  
+  printf("[DEBUG] All EN pins (K1/K2/K3) reconfigured with pull-up\r\n\r\n");
+  
+  // Initialize relay module
+  Relay_Init();
+  HAL_Delay(500);
+  
+  printf("\r\n========== External Interrupt Test Mode ==========\r\n");
+  printf("Testing K1_EN/K2_EN/K3_EN interrupt control...\r\n\r\n");
+  printf("[Instructions]\r\n");
+  printf("  K1_EN (PB9):  LOW=Open CH1,  HIGH=Close CH1\r\n");
+  printf("  K2_EN (PB8):  LOW=Open CH2,  HIGH=Close CH2\r\n");
+  printf("  K3_EN (PA15): LOW=Open CH3,  HIGH=Close CH3\r\n\r\n");
+  printf("[Hardware Setup]\r\n");
+  printf("  - Connect K1_EN/K2_EN/K3_EN to GND (LOW) or 3.3V (HIGH)\r\n");
+  printf("  - Use jumper or switch to change levels\r\n");
+  printf("  - Observe serial output and relay actions\r\n\r\n");
+  printf("[Status Monitor Started - Change EN pins to test]\r\n\r\n");
 
   /* USER CODE END 2 */
 
@@ -220,43 +264,18 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     
-    // 后台更新温度
+    // Phase 7: External Interrupt Control Test
+    // Monitor EN pins and update relay states
+    
+    // Update relay FSM (handle ongoing pulses)
+    Relay_Update();
+    
+    // Update temperature and alarm modules
     Temperature_Update();
+    Alarm_Update();
     
-    // 阶段5测试：持续OLED更新温度信息
-    HAL_Delay(500);  // 从5000ms改为500ms
-    
-    // 获取温度值和风扇转速
-    int16_t t1, t2, t3;
-    Temperature_GetValues(&t1, &t2, &t3);
-    uint16_t fan_rpm = Temperature_GetFanRPM();
-    
-    // 更新OLED显示
-    OLED_Clear();
-    OLED_ShowString(0, 0, "System Running", OLED_FONT_6X8);
-    
-    // 在OLED上显示温度
-    char temp_str[20];
-    snprintf(temp_str, sizeof(temp_str), "T1:%d.%dC", t1/10, abs(t1%10));
-    OLED_ShowString(0, 2, temp_str, OLED_FONT_6X8);
-    
-    snprintf(temp_str, sizeof(temp_str), "T2:%d.%dC", t2/10, abs(t2%10));
-    OLED_ShowString(0, 3, temp_str, OLED_FONT_6X8);
-    
-    snprintf(temp_str, sizeof(temp_str), "T3:%d.%dC", t3/10, abs(t3%10));
-    OLED_ShowString(0, 4, temp_str, OLED_FONT_6X8);
-    
-    // 显示风扇RPM而不是百分比
-    snprintf(temp_str, sizeof(temp_str), "FAN:%d RPM", fan_rpm);
-    OLED_ShowString(0, 6, temp_str, OLED_FONT_6X8);
-    
-    OLED_Refresh();
-    
-    // UART输出
-    UART_PrintTimestamp();
-    printf("T1:%d.%dC T2:%d.%dC T3:%d.%dC FAN:%d RPM - Phase 5 OK\r\n",
-           t1/10, abs(t1%10), t2/10, abs(t2%10), t3/10, abs(t3%10),
-           fan_rpm);
+    // Delay to reduce serial output frequency
+    HAL_Delay(100);
   }
   /* USER CODE END 3 */
 }

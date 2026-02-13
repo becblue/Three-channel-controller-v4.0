@@ -179,15 +179,16 @@
 
 | 信号 | 引脚 | 说明 |
 |------|------|------|
-| FLASH_CS | PB12 | 连接到NOR FLASH CS引脚，GPIO手动控制 |
+| SPI2_NSS | PB12 | 连接到NOR FLASH CS引脚，使用SPI硬件NSS输出 |
 | SPI2_SCK | PB13 | 连接到NOR FLASH CLK引脚 |
 | SPI2_MISO | PB14 | 连接到NOR FLASH DO引脚 |
 | SPI2_MOSI | PB15 | 连接到NOR FLASH DI引脚 |
 
-**重要修复说明（2025-01-28）**：
-- 修复了CubeMX配置与代码实现的严重冲突
-- PB12从硬件NSS输出改为普通GPIO输出
-- 确保W25Q128所需的精确CS时序控制
+**配置说明（2026-02-13更新）**：
+- SPI2配置为主机模式，硬件NSS输出
+- PB12配置为复用推挽输出（SPI2_NSS），由硬件自动控制片选时序
+- 数据大小：8位，时钟极性：低，时钟相位：第1边沿采样
+- 波特率预分频：2（高速通信）
 
 ---
 

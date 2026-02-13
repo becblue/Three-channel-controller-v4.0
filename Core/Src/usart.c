@@ -201,10 +201,10 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 
 /**
  * @brief  重定向printf到USART3
- * @note   需要在Keil设置中勾选"Use MicroLIB"
+ * @note   �?要在Keil设置中勾�?"Use MicroLIB"
  * @param  ch: 要发送的字符
- * @param  f: 文件指针（未使用）
- * @retval 发送的字符
+ * @param  f: 文件指针（未使用�?
+ * @retval 发�?�的字符
  */
 int fputc(int ch, FILE *f)
 {
@@ -214,8 +214,8 @@ int fputc(int ch, FILE *f)
 
 /**
  * @brief  重定向getchar（可选）
- * @param  f: 文件指针（未使用）
- * @retval 接收的字符
+ * @param  f: 文件指针（未使用�?
+ * @retval 接收的字�?
  */
 int fgetc(FILE *f)
 {
@@ -225,10 +225,10 @@ int fgetc(FILE *f)
 }
 
 /**
- * @brief  格式化输出函数
+ * @brief  格式化输出函�?
  * @param  format: 格式化字符串
  * @param  ...: 可变参数
- * @note   使用vsnprintf实现，最大支持256字节
+ * @note   使用vsnprintf实现，最大支�?256字节
  */
 void UART_Printf(const char *format, ...)
 {
@@ -243,7 +243,7 @@ void UART_Printf(const char *format, ...)
 }
 
 /**
- * @brief  打印时间戳
+ * @brief  打印时间�?
  * @note   基于HAL_GetTick()输出毫秒级时间戳，格式：[xxxxx ms]
  */
 void UART_PrintTimestamp(void)
@@ -253,7 +253,7 @@ void UART_PrintTimestamp(void)
 
 /**
  * @brief  日志输出函数
- * @param  level: 日志级别字符串（如"INFO", "WARNING", "ERROR"）
+ * @param  level: 日志级别字符串（�?"INFO", "WARNING", "ERROR"�?
  * @param  msg: 日志消息内容
  * @note   输出格式：[时间戳][级别] 消息内容
  */

@@ -23,8 +23,8 @@
 /* USER CODE BEGIN 0 */
 
 /**
- * @brief ADC+DMA缓冲区
- * @note  存储3路NTC的ADC采样值
+ * @brief ADC+DMA缓冲�?
+ * @note  存储3路NTC的ADC采样�?
  *        DMA循环模式自动更新此缓冲区
  */
 uint16_t adc_dma_buffer[3] = {0};

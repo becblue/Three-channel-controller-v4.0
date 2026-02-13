@@ -47,21 +47,21 @@ void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN Prototypes */
 
 /**
- * @brief 格式化输出函数
+ * @brief 格式化输出函�?
  * @param format: 格式化字符串
  * @param ...: 可变参数
  */
 void UART_Printf(const char *format, ...);
 
 /**
- * @brief 打印时间戳
+ * @brief 打印时间�?
  * @note 基于HAL_GetTick()输出毫秒级时间戳
  */
 void UART_PrintTimestamp(void);
 
 /**
  * @brief 日志输出函数
- * @param level: 日志级别字符串（如"INFO", "WARNING", "ERROR"）
+ * @param level: 日志级别字符串（�?"INFO", "WARNING", "ERROR"�?
  * @param msg: 日志消息内容
  */
 void UART_Log(const char *level, const char *msg);

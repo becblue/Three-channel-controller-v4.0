@@ -251,23 +251,10 @@ void EXTI15_10_IRQHandler(void)
   /* USER CODE BEGIN EXTI15_10_IRQn 0 */
 
   /* USER CODE END EXTI15_10_IRQn 0 */
-  // Call HAL handler only once - it will check all pending EXTI lines
-  if (__HAL_GPIO_EXTI_GET_IT(FAN_SEN_Pin) != RESET)
-  {
-    HAL_GPIO_EXTI_IRQHandler(FAN_SEN_Pin);
-  }
-  if (__HAL_GPIO_EXTI_GET_IT(KEY1_Pin) != RESET)
-  {
-    HAL_GPIO_EXTI_IRQHandler(KEY1_Pin);
-  }
-  if (__HAL_GPIO_EXTI_GET_IT(KEY2_Pin) != RESET)
-  {
-    HAL_GPIO_EXTI_IRQHandler(KEY2_Pin);
-  }
-  if (__HAL_GPIO_EXTI_GET_IT(K3_EN_Pin) != RESET)
-  {
-    HAL_GPIO_EXTI_IRQHandler(K3_EN_Pin);
-  }
+  HAL_GPIO_EXTI_IRQHandler(FAN_SEN_Pin);
+  HAL_GPIO_EXTI_IRQHandler(KEY1_Pin);
+  HAL_GPIO_EXTI_IRQHandler(KEY2_Pin);
+  HAL_GPIO_EXTI_IRQHandler(K3_EN_Pin);
   /* USER CODE BEGIN EXTI15_10_IRQn 1 */
 
   /* USER CODE END EXTI15_10_IRQn 1 */
@@ -283,9 +270,27 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     if (GPIO_Pin == FAN_SEN_Pin)
     {
-        // Fan pulse detected - increment counter
+        // 风扇脉冲�?�? - 计数器加1
         extern void Temperature_FanPulseISR(void);
         Temperature_FanPulseISR();
+    }
+    else if (GPIO_Pin == K1_EN_Pin)
+    {
+        // 通道1使能中断
+        extern void Relay_K1_EN_ISR(void);
+        Relay_K1_EN_ISR();
+    }
+    else if (GPIO_Pin == K2_EN_Pin)
+    {
+        // 通道2使能中断
+        extern void Relay_K2_EN_ISR(void);
+        Relay_K2_EN_ISR();
+    }
+    else if (GPIO_Pin == K3_EN_Pin)
+    {
+        // 通道3使能中断
+        extern void Relay_K3_EN_ISR(void);
+        Relay_K3_EN_ISR();
     }
 }
 

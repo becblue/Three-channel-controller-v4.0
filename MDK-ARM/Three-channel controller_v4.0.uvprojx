@@ -394,6 +394,41 @@
           <GroupName>Application/User/Core</GroupName>
           <Files>
             <File>
+              <FileName>alarm_output.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\alarm_output.c</FilePath>
+            </File>
+            <File>
+              <FileName>common_def.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\common_def.c</FilePath>
+            </File>
+            <File>
+              <FileName>oled_display.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\oled_display.c</FilePath>
+            </File>
+            <File>
+              <FileName>relay_control.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\relay_control.c</FilePath>
+            </File>
+            <File>
+              <FileName>safety_monitor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\safety_monitor.c</FilePath>
+            </File>
+            <File>
+              <FileName>self_test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\self_test.c</FilePath>
+            </File>
+            <File>
+              <FileName>temperature.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\temperature.c</FilePath>
+            </File>
+            <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/main.c</FilePath>
@@ -442,41 +477,6 @@
               <FileName>stm32f1xx_hal_msp.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/stm32f1xx_hal_msp.c</FilePath>
-            </File>
-            <File>
-              <FileName>alarm_output.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Core\Src\alarm_output.c</FilePath>
-            </File>
-            <File>
-              <FileName>common_def.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Core\Src\common_def.c</FilePath>
-            </File>
-            <File>
-              <FileName>oled_display.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Core\Src\oled_display.c</FilePath>
-            </File>
-            <File>
-              <FileName>relay_control.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Core\Src\relay_control.c</FilePath>
-            </File>
-            <File>
-              <FileName>safety_monitor.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Core\Src\safety_monitor.c</FilePath>
-            </File>
-            <File>
-              <FileName>self_test.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Core\Src\self_test.c</FilePath>
-            </File>
-            <File>
-              <FileName>temperature.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Core\Src\temperature.c</FilePath>
             </File>
           </Files>
         </Group>
