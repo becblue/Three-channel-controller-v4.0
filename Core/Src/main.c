@@ -111,6 +111,12 @@ int main(void)
   printf("Printf Test OK\r\n");
   HAL_Delay(100);
   
+  // Initialize temperature module (Phase 4 - keep running in background)
+  printf("\r\n[System] Initializing temperature module...\r\n");
+  Temperature_Init();
+  printf("[System] Temperature module ready\r\n\r\n");
+  HAL_Delay(100);
+  
   // Phase 5 Test: OLED Display Driver
   printf("\r\n========== Phase 5 Test ==========\r\n");
   printf("Testing OLED display module...\r\n\r\n");
@@ -136,17 +142,41 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     
-    // Phase 5 Test: Continuous OLED update
+    // Update temperature in background
+    Temperature_Update();
+    
+    // Phase 5 Test: Continuous OLED update with temperature info
     HAL_Delay(5000);
     
-    // Update display with system status
+    // Get temperature values
+    int16_t t1, t2, t3;
+    Temperature_GetValues(&t1, &t2, &t3);
+    
+    // Update OLED display
     OLED_Clear();
     OLED_ShowString(0, 0, "System Running", OLED_FONT_6X8);
-    OLED_ShowString(0, 2, "Phase 5 OK", OLED_FONT_6X8);
+    
+    // Show temperature on OLED
+    char temp_str[20];
+    snprintf(temp_str, sizeof(temp_str), "T1:%d.%dC", t1/10, abs(t1%10));
+    OLED_ShowString(0, 2, temp_str, OLED_FONT_6X8);
+    
+    snprintf(temp_str, sizeof(temp_str), "T2:%d.%dC", t2/10, abs(t2%10));
+    OLED_ShowString(0, 3, temp_str, OLED_FONT_6X8);
+    
+    snprintf(temp_str, sizeof(temp_str), "T3:%d.%dC", t3/10, abs(t3%10));
+    OLED_ShowString(0, 4, temp_str, OLED_FONT_6X8);
+    
+    snprintf(temp_str, sizeof(temp_str), "FAN:%d%%", Temperature_GetFanSpeed());
+    OLED_ShowString(0, 6, temp_str, OLED_FONT_6X8);
+    
     OLED_Refresh();
     
+    // UART output
     UART_PrintTimestamp();
-    printf("OLED Display OK - Phase 5 Running\r\n");
+    printf("T1:%d.%dC T2:%d.%dC T3:%d.%dC FAN:%d%% - Phase 5 OK\r\n",
+           t1/10, abs(t1%10), t2/10, abs(t2%10), t3/10, abs(t3%10),
+           Temperature_GetFanSpeed());
   }
   /* USER CODE END 3 */
 }
