@@ -454,11 +454,6 @@
               <FilePath>..\Core\Src\common_def.c</FilePath>
             </File>
             <File>
-              <FileName>ntc_table.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Core\Src\ntc_table.c</FilePath>
-            </File>
-            <File>
               <FileName>oled_display.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Core\Src\oled_display.c</FilePath>
