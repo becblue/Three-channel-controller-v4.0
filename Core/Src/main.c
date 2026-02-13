@@ -105,96 +105,96 @@ int main(void)
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
   
-  // Basic UART test first
+  // 基础UART测试
   HAL_UART_Transmit(&huart1, (uint8_t*)"UART Test Start\r\n", 17, 100);
   HAL_Delay(100);
   
   printf("Printf Test OK\r\n");
   HAL_Delay(100);
   
-  // Initialize temperature module (Phase 4 - keep running in background)
+  // 初始化温度模块（阶段4 - 在后台持续运行）
   printf("\r\n[System] Initializing temperature module...\r\n");
   Temperature_Init();
   printf("[System] Temperature module ready\r\n\r\n");
   HAL_Delay(100);
   
-  // Phase 5 Test: OLED Display Driver
+  // 阶段5测试：OLED显示驱动
   printf("\r\n========== Phase 5 Test ==========\r\n");
   printf("Testing OLED display module...\r\n\r\n");
   
-  // Initialize OLED
+  // 初始化OLED
   OLED_Init();
   printf("\r\n");
   HAL_Delay(500);
   
-  // Run OLED test
+  // 运行OLED测试
   OLED_Test();
   
   printf("\r\n========== Phase 5 Test PASS ==========\r\n\r\n");
   HAL_Delay(10);
   
-  // Phase 6 Test: Alarm Output Control
+  // 阶段6测试：报警输出控制
   printf("\r\n========== Phase 6 Test ==========\r\n");
-  printf("娴嬭瘯鎶ヨ杈撳嚭鎺у埗妯″潡...\r\n\r\n");
+  printf("Testing alarm output control module...\r\n\r\n");
   
-  // 鍒濆鍖栨姤璀︽ā鍧�
+  // 初始化报警模块
   Alarm_Init();
   HAL_Delay(500);
   
-  // 娴嬭瘯1锛欰绫诲紓甯革紙1绉掕剦鍐诧級
-  printf("[Test 1] A绫诲紓甯� - 1绉掕剦鍐叉祴璇昞r\n");
+  // 测试1：A类异常（1秒脉冲）
+  printf("[Test 1] Type-A Error - 1s pulse test\r\n");
   Alarm_SetError(ERROR_TYPE_A);
   Alarm_PrintStatus();
   for(int i = 0; i < 5; i++) {
-      printf("  [%d] 铚傞福鍣ㄥ簲璇�1绉掕剦鍐�...\r\n", i+1);
+      printf("  [%d] Beep should pulse at 1s interval...\r\n", i+1);
       HAL_Delay(1000);
       Alarm_Update();
   }
   Alarm_ClearError(ERROR_TYPE_A);
-  printf("  A绫诲紓甯稿凡娓呴櫎\r\n\r\n");
+  printf("  Type-A error cleared\r\n\r\n");
   HAL_Delay(1000);
   
-  // 娴嬭瘯2锛欱绫诲紓甯革紙50ms鑴夊啿锛�
-  printf("[Test 2] B绫诲紓甯� - 50ms鑴夊啿娴嬭瘯\r\n");
+  // 测试2：B类异常（50ms脉冲）
+  printf("[Test 2] Type-B Error - 50ms pulse test\r\n");
   Alarm_SetError(ERROR_TYPE_B);
   Alarm_PrintStatus();
   for(int i = 0; i < 20; i++) {
-      if (i % 5 == 0) printf("  [%d] 铚傞福鍣ㄥ簲璇�50ms鑴夊啿...\r\n", i/5+1);
+      if (i % 5 == 0) printf("  [%d] Beep should pulse at 50ms interval...\r\n", i/5+1);
       HAL_Delay(100);
       Alarm_Update();
   }
   Alarm_ClearError(ERROR_TYPE_B);
-  printf("  B绫诲紓甯稿凡娓呴櫎\r\n\r\n");
+  printf("  Type-B error cleared\r\n\r\n");
   HAL_Delay(1000);
   
-  // 娴嬭瘯3锛欿绫诲紓甯革紙鎸佺画鍝嶏級
-  printf("[Test 3] K绫诲紓甯� - 鎸佺画鍝嶆祴璇昞r\n");
+  // 测试3：K类异常（持续响）
+  printf("[Test 3] Type-K Error - continuous beep test\r\n");
   Alarm_SetError(ERROR_TYPE_K);
   Alarm_PrintStatus();
   for(int i = 0; i < 5; i++) {
-      printf("  [%d] 铚傞福鍣ㄥ簲璇ユ寔缁搷...\r\n", i+1);
+      printf("  [%d] Beep should be continuous...\r\n", i+1);
       HAL_Delay(1000);
       Alarm_Update();
   }
   Alarm_ClearError(ERROR_TYPE_K);
-  printf("  K绫诲紓甯稿凡娓呴櫎\r\n\r\n");
+  printf("  Type-K error cleared\r\n\r\n");
   HAL_Delay(1000);
   
-  // 娴嬭瘯4锛氬寮傚父浼樺厛绾ф祴璇�
-  printf("[Test 4] 澶氬紓甯镐紭鍏堢骇娴嬭瘯\r\n");
-  printf("  璁剧疆A绫诲紓甯革紙1绉掕剦鍐诧級...\r\n");
+  // 测试4：多异常优先级测试
+  printf("[Test 4] Multiple error priority test\r\n");
+  printf("  Set Type-A error (1s pulse)...\r\n");
   Alarm_SetError(ERROR_TYPE_A);
   Alarm_Update();
   HAL_Delay(2000);
   
-  printf("  鍐嶈缃瓸绫诲紓甯革紙50ms鑴夊啿锛�- 搴斿垏鎹㈠埌50ms鑴夊啿...\r\n");
+  printf("  Add Type-B error (50ms pulse) - should switch to 50ms...\r\n");
   Alarm_SetError(ERROR_TYPE_B);
   for(int i = 0; i < 10; i++) {
       HAL_Delay(100);
       Alarm_Update();
   }
   
-  printf("  鍐嶈缃甂绫诲紓甯革紙鎸佺画鍝嶏級- 搴斿垏鎹㈠埌鎸佺画鍝�...\r\n");
+  printf("  Add Type-K error (continuous) - should switch to continuous...\r\n");
   Alarm_SetError(ERROR_TYPE_K);
   for(int i = 0; i < 3; i++) {
       HAL_Delay(1000);
@@ -202,7 +202,7 @@ int main(void)
   }
   
   Alarm_PrintStatus();
-  printf("  娓呴櫎鎵€鏈夊紓甯�...\r\n");
+  printf("  Clear all errors...\r\n");
   Alarm_ClearAll();
   Alarm_PrintStatus();
   HAL_Delay(1000);
@@ -220,22 +220,22 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     
-    // Update temperature in background
+    // 后台更新温度
     Temperature_Update();
     
-    // Phase 5 Test: Continuous OLED update with temperature info
-    HAL_Delay(500);  // Changed from 5000ms to 500ms
+    // 阶段5测试：持续OLED更新温度信息
+    HAL_Delay(500);  // 从5000ms改为500ms
     
-    // Get temperature values and fan RPM
+    // 获取温度值和风扇转速
     int16_t t1, t2, t3;
     Temperature_GetValues(&t1, &t2, &t3);
     uint16_t fan_rpm = Temperature_GetFanRPM();
     
-    // Update OLED display
+    // 更新OLED显示
     OLED_Clear();
     OLED_ShowString(0, 0, "System Running", OLED_FONT_6X8);
     
-    // Show temperature on OLED
+    // 在OLED上显示温度
     char temp_str[20];
     snprintf(temp_str, sizeof(temp_str), "T1:%d.%dC", t1/10, abs(t1%10));
     OLED_ShowString(0, 2, temp_str, OLED_FONT_6X8);
@@ -246,13 +246,13 @@ int main(void)
     snprintf(temp_str, sizeof(temp_str), "T3:%d.%dC", t3/10, abs(t3%10));
     OLED_ShowString(0, 4, temp_str, OLED_FONT_6X8);
     
-    // Show fan RPM instead of percentage
+    // 显示风扇RPM而不是百分比
     snprintf(temp_str, sizeof(temp_str), "FAN:%d RPM", fan_rpm);
     OLED_ShowString(0, 6, temp_str, OLED_FONT_6X8);
     
     OLED_Refresh();
     
-    // UART output
+    // UART输出
     UART_PrintTimestamp();
     printf("T1:%d.%dC T2:%d.%dC T3:%d.%dC FAN:%d RPM - Phase 5 OK\r\n",
            t1/10, abs(t1%10), t2/10, abs(t2%10), t3/10, abs(t3%10),

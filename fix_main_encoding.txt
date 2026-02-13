@@ -1,0 +1,79 @@
+// 请将main.c第136行到第211行的Phase 6测试代码替换为以下内容：
+// （包含行号仅供参考，实际粘贴时不要包含行号）
+
+  // Phase 6 Test: Alarm Output Control
+  printf("\r\n========== Phase 6 Test ==========\r\n");
+  printf("Testing alarm output control module...\r\n\r\n");
+  
+  // Initialize alarm module
+  Alarm_Init();
+  HAL_Delay(500);
+  
+  // Test 1: Type-A error (1s pulse)
+  printf("[Test 1] Type-A Error - 1s pulse test\r\n");
+  Alarm_SetError(ERROR_TYPE_A);
+  Alarm_PrintStatus();
+  for(int i = 0; i < 5; i++) {
+      printf("  [%d] Beep should pulse at 1s interval...\r\n", i+1);
+      HAL_Delay(1000);
+      Alarm_Update();
+  }
+  Alarm_ClearError(ERROR_TYPE_A);
+  printf("  Type-A error cleared\r\n\r\n");
+  HAL_Delay(1000);
+  
+  // Test 2: Type-B error (50ms pulse)
+  printf("[Test 2] Type-B Error - 50ms pulse test\r\n");
+  Alarm_SetError(ERROR_TYPE_B);
+  Alarm_PrintStatus();
+  for(int i = 0; i < 20; i++) {
+      if (i % 5 == 0) printf("  [%d] Beep should pulse at 50ms interval...\r\n", i/5+1);
+      HAL_Delay(100);
+      Alarm_Update();
+  }
+  Alarm_ClearError(ERROR_TYPE_B);
+  printf("  Type-B error cleared\r\n\r\n");
+  HAL_Delay(1000);
+  
+  // Test 3: Type-K error (continuous)
+  printf("[Test 3] Type-K Error - continuous beep test\r\n");
+  Alarm_SetError(ERROR_TYPE_K);
+  Alarm_PrintStatus();
+  for(int i = 0; i < 5; i++) {
+      printf("  [%d] Beep should be continuous...\r\n", i+1);
+      HAL_Delay(1000);
+      Alarm_Update();
+  }
+  Alarm_ClearError(ERROR_TYPE_K);
+  printf("  Type-K error cleared\r\n\r\n");
+  HAL_Delay(1000);
+  
+  // Test 4: Multiple error priority test
+  printf("[Test 4] Multiple error priority test\r\n");
+  printf("  Set Type-A error (1s pulse)...\r\n");
+  Alarm_SetError(ERROR_TYPE_A);
+  Alarm_Update();
+  HAL_Delay(2000);
+  
+  printf("  Add Type-B error (50ms pulse) - should switch to 50ms...\r\n");
+  Alarm_SetError(ERROR_TYPE_B);
+  for(int i = 0; i < 10; i++) {
+      HAL_Delay(100);
+      Alarm_Update();
+  }
+  
+  printf("  Add Type-K error (continuous) - should switch to continuous...\r\n");
+  Alarm_SetError(ERROR_TYPE_K);
+  for(int i = 0; i < 3; i++) {
+      HAL_Delay(1000);
+      Alarm_Update();
+  }
+  
+  Alarm_PrintStatus();
+  printf("  Clear all errors...\r\n");
+  Alarm_ClearAll();
+  Alarm_PrintStatus();
+  HAL_Delay(1000);
+  
+  printf("\r\n========== Phase 6 Test PASS ==========\r\n\r\n");
+  HAL_Delay(10);
