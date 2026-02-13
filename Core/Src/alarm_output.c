@@ -50,9 +50,9 @@ void Alarm_Init(void)
     alarm_manager.beep_timer = 0;
     alarm_manager.initialized = true;
     
-    printf("[Alarm] 模块初始化完成\r\n");
-    printf("[Alarm] ALARM引脚: PB4（高电平=正常）\r\n");
-    printf("[Alarm] BEEP引脚:  PB3（高电平=静音）\r\n");
+    printf("[Alarm] Module initialized\r\n");
+    printf("[Alarm] ALARM pin: PB4 (HIGH=Normal)\r\n");
+    printf("[Alarm] BEEP pin:  PB3 (HIGH=Silent)\r\n");
 }
 
 /**
@@ -65,7 +65,7 @@ void Alarm_SetError(ErrorType_e error_type)
     // 如果是新异常，记录日志
     if ((alarm_manager.error_flags & error_type) == 0)
     {
-        printf("[Alarm] 设置异常: 0x%04X (%s)\r\n", 
+        printf("[Alarm] Set error: 0x%04X (%s)\r\n", 
                error_type, CommonDef_GetErrorString(error_type));
     }
     
@@ -89,7 +89,7 @@ void Alarm_ClearError(ErrorType_e error_type)
     // 如果异常存在，记录日志
     if ((alarm_manager.error_flags & error_type) != 0)
     {
-        printf("[Alarm] 清除异常: 0x%04X (%s)\r\n", 
+        printf("[Alarm] Clear error: 0x%04X (%s)\r\n", 
                error_type, CommonDef_GetErrorString(error_type));
     }
     
@@ -147,53 +147,53 @@ void Alarm_Update(void)
 void Alarm_PrintStatus(void)
 {
     printf("\r\n========================================\r\n");
-    printf("          报警状态\r\n");
+    printf("          Alarm Status\r\n");
     printf("========================================\r\n");
     
-    // 异常标志
-    printf("异常标志: 0x%04X\r\n", alarm_manager.error_flags);
+    // Error flags
+    printf("Error Flags: 0x%04X\r\n", alarm_manager.error_flags);
     if (alarm_manager.error_flags != ERROR_TYPE_NONE)
     {
-        printf("  活动异常列表:\r\n");
+        printf("  Active errors:\r\n");
         for (int i = 0; i < 15; i++)
         {
-            ErrorType_e err = (1 << i);
+            uint16_t err = (1 << i);
             if (alarm_manager.error_flags & err)
             {
-                printf("    - %s\r\n", CommonDef_GetErrorString(err));
+                printf("    - %s\r\n", CommonDef_GetErrorString((ErrorType_e)err));
             }
         }
     }
     else
     {
-        printf("  无异常\r\n");
+        printf("  No errors\r\n");
     }
     
-    // 蜂鸣器模式
-    printf("\r\n蜂鸣器模式: ");
+    // Beep mode
+    printf("\r\nBeep Mode: ");
     switch (alarm_manager.beep_mode)
     {
         case BEEP_MODE_OFF:
-            printf("关闭\r\n");
+            printf("OFF\r\n");
             break;
         case BEEP_MODE_CONTINUOUS:
-            printf("持续响（温度异常）\r\n");
+            printf("Continuous (Temp error)\r\n");
             break;
         case BEEP_MODE_PULSE_50MS:
-            printf("50ms脉冲（状态反馈异常）\r\n");
+            printf("50ms pulse (Feedback error)\r\n");
             break;
         case BEEP_MODE_PULSE_1S:
-            printf("1秒脉冲（冲突/自检异常）\r\n");
+            printf("1s pulse (Conflict/Self-test error)\r\n");
             break;
         default:
-            printf("未知\r\n");
+            printf("Unknown\r\n");
             break;
     }
     
-    // GPIO状态
-    printf("\r\nGPIO状态:\r\n");
-    printf("  ALARM: %s\r\n", alarm_manager.alarm_active ? "低电平（报警）" : "高电平（正常）");
-    printf("  BEEP:  %s\r\n", alarm_manager.beep_state ? "响" : "静");
+    // GPIO status
+    printf("\r\nGPIO Status:\r\n");
+    printf("  ALARM: %s\r\n", alarm_manager.alarm_active ? "LOW (Active)" : "HIGH (Normal)");
+    printf("  BEEP:  %s\r\n", alarm_manager.beep_state ? "Beeping" : "Silent");
     
     printf("========================================\r\n\r\n");
 }
@@ -203,7 +203,7 @@ void Alarm_PrintStatus(void)
  */
 void Alarm_ClearAll(void)
 {
-    printf("[Alarm] 清除所有异常标志\r\n");
+    printf("[Alarm] Clear all errors\r\n");
     alarm_manager.error_flags = ERROR_TYPE_NONE;
     alarm_manager.beep_mode = BEEP_MODE_OFF;
     alarm_manager.beep_state = false;
@@ -212,7 +212,7 @@ void Alarm_ClearAll(void)
     
     // 关闭所有报警输出
     HAL_GPIO_WritePin(ALARM_GPIO_Port, ALARM_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_PIN, GPIO_PIN_SET);
 }
 
 /**
@@ -260,7 +260,7 @@ static void alarm_update_beep_mode(void)
         alarm_manager.beep_timer = HAL_GetTick();
         alarm_manager.beep_state = false;
         
-        printf("[Alarm] 蜂鸣器模式切换: %d -> %d\r\n", old_mode, alarm_manager.beep_mode);
+        printf("[Alarm] Beep mode changed: %d -> %d\r\n", old_mode, alarm_manager.beep_mode);
     }
 }
 
