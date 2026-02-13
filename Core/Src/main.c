@@ -30,6 +30,7 @@
 /* USER CODE BEGIN Includes */
 #include "common_def.h"
 #include "temperature.h"
+#include "oled_display.h"
 #include <stdlib.h>
 /* USER CODE END Includes */
 
@@ -110,50 +111,19 @@ int main(void)
   printf("Printf Test OK\r\n");
   HAL_Delay(100);
   
-  // Phase 4 Test: Temperature Monitoring and Fan Control
-  printf("\r\n========== Phase 4 Test ==========\r\n");
-  printf("Testing temperature module...\r\n\r\n");
+  // Phase 5 Test: OLED Display Driver
+  printf("\r\n========== Phase 5 Test ==========\r\n");
+  printf("Testing OLED display module...\r\n\r\n");
   
-  // Initialize temperature module
-  Temperature_Init();
+  // Initialize OLED
+  OLED_Init();
   printf("\r\n");
-  HAL_Delay(100);
+  HAL_Delay(500);
   
-  // Test for 20 seconds, print every 1 second
-  printf("=== Temperature Monitoring Test (20s) ===\r\n");
-  printf("Time  NTC1(C)  NTC2(C)  NTC3(C)  FAN%%  Status\r\n");
-  printf("----------------------------------------------------\r\n");
+  // Run OLED test
+  OLED_Test();
   
-  for(int i = 0; i < 20; i++)
-  {
-      HAL_Delay(1000);
-      Temperature_Update();
-      
-      int16_t t1, t2, t3;
-      Temperature_GetValues(&t1, &t2, &t3);
-      
-      printf("[%2ds]  %3d.%d    %3d.%d    %3d.%d    %3d%%  ", 
-             i+1,
-             t1/10, abs(t1%10),
-             t2/10, abs(t2%10),
-             t3/10, abs(t3%10),
-             Temperature_GetFanSpeed());
-      
-      // Print status flags
-      for(int j = 0; j < 3; j++)
-      {
-          uint8_t flag = Temperature_GetOverheatFlag(j);
-          if (flag == TEMP_STATUS_OVERHEAT) printf("!");
-          else if (flag == TEMP_STATUS_WARM) printf("W");
-          else printf("-");
-      }
-      printf("\r\n");
-  }
-  
-  printf("\r\n");
-  Temperature_PrintStatus();
-  
-  printf("========== Phase 4 Test PASS ==========\r\n\r\n");
+  printf("\r\n========== Phase 5 Test PASS ==========\r\n\r\n");
   HAL_Delay(10);
 
   /* USER CODE END 2 */
@@ -166,17 +136,17 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     
-    // Phase 4 Test: Continuous temperature monitoring
+    // Phase 5 Test: Continuous OLED update
     HAL_Delay(5000);
-    Temperature_Update();
     
-    int16_t t1, t2, t3;
-    Temperature_GetValues(&t1, &t2, &t3);
+    // Update display with system status
+    OLED_Clear();
+    OLED_ShowString(0, 0, "System Running", OLED_FONT_6X8);
+    OLED_ShowString(0, 2, "Phase 5 OK", OLED_FONT_6X8);
+    OLED_Refresh();
     
     UART_PrintTimestamp();
-    printf("T1:%3d.%dC T2:%3d.%dC T3:%3d.%dC FAN:%d%% - Phase 4 OK\r\n",
-           t1/10, abs(t1%10), t2/10, abs(t2%10), t3/10, abs(t3%10),
-           Temperature_GetFanSpeed());
+    printf("OLED Display OK - Phase 5 Running\r\n");
   }
   /* USER CODE END 3 */
 }
