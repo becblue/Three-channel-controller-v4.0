@@ -29,7 +29,6 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "common_def.h"
-#include "ntc_table.h"
 #include "temperature.h"
 #include <stdlib.h>
 /* USER CODE END Includes */
