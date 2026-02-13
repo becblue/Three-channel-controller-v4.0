@@ -212,7 +212,7 @@ void Alarm_ClearAll(void)
     
     // 关闭所有报警输出
     HAL_GPIO_WritePin(ALARM_GPIO_Port, ALARM_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_PIN, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, GPIO_PIN_SET);
 }
 
 /**
