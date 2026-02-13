@@ -31,6 +31,7 @@
 #include "common_def.h"
 #include "temperature.h"
 #include "oled_display.h"
+#include "alarm_output.h"
 #include <stdlib.h>
 /* USER CODE END Includes */
 
@@ -130,6 +131,83 @@ int main(void)
   OLED_Test();
   
   printf("\r\n========== Phase 5 Test PASS ==========\r\n\r\n");
+  HAL_Delay(10);
+  
+  // Phase 6 Test: Alarm Output Control
+  printf("\r\n========== Phase 6 Test ==========\r\n");
+  printf("娴嬭瘯鎶ヨ杈撳嚭鎺у埗妯″潡...\r\n\r\n");
+  
+  // 鍒濆鍖栨姤璀︽ā鍧�
+  Alarm_Init();
+  HAL_Delay(500);
+  
+  // 娴嬭瘯1锛欰绫诲紓甯革紙1绉掕剦鍐诧級
+  printf("[Test 1] A绫诲紓甯� - 1绉掕剦鍐叉祴璇昞r\n");
+  Alarm_SetError(ERROR_TYPE_A);
+  Alarm_PrintStatus();
+  for(int i = 0; i < 5; i++) {
+      printf("  [%d] 铚傞福鍣ㄥ簲璇�1绉掕剦鍐�...\r\n", i+1);
+      HAL_Delay(1000);
+      Alarm_Update();
+  }
+  Alarm_ClearError(ERROR_TYPE_A);
+  printf("  A绫诲紓甯稿凡娓呴櫎\r\n\r\n");
+  HAL_Delay(1000);
+  
+  // 娴嬭瘯2锛欱绫诲紓甯革紙50ms鑴夊啿锛�
+  printf("[Test 2] B绫诲紓甯� - 50ms鑴夊啿娴嬭瘯\r\n");
+  Alarm_SetError(ERROR_TYPE_B);
+  Alarm_PrintStatus();
+  for(int i = 0; i < 20; i++) {
+      if (i % 5 == 0) printf("  [%d] 铚傞福鍣ㄥ簲璇�50ms鑴夊啿...\r\n", i/5+1);
+      HAL_Delay(100);
+      Alarm_Update();
+  }
+  Alarm_ClearError(ERROR_TYPE_B);
+  printf("  B绫诲紓甯稿凡娓呴櫎\r\n\r\n");
+  HAL_Delay(1000);
+  
+  // 娴嬭瘯3锛欿绫诲紓甯革紙鎸佺画鍝嶏級
+  printf("[Test 3] K绫诲紓甯� - 鎸佺画鍝嶆祴璇昞r\n");
+  Alarm_SetError(ERROR_TYPE_K);
+  Alarm_PrintStatus();
+  for(int i = 0; i < 5; i++) {
+      printf("  [%d] 铚傞福鍣ㄥ簲璇ユ寔缁搷...\r\n", i+1);
+      HAL_Delay(1000);
+      Alarm_Update();
+  }
+  Alarm_ClearError(ERROR_TYPE_K);
+  printf("  K绫诲紓甯稿凡娓呴櫎\r\n\r\n");
+  HAL_Delay(1000);
+  
+  // 娴嬭瘯4锛氬寮傚父浼樺厛绾ф祴璇�
+  printf("[Test 4] 澶氬紓甯镐紭鍏堢骇娴嬭瘯\r\n");
+  printf("  璁剧疆A绫诲紓甯革紙1绉掕剦鍐诧級...\r\n");
+  Alarm_SetError(ERROR_TYPE_A);
+  Alarm_Update();
+  HAL_Delay(2000);
+  
+  printf("  鍐嶈缃瓸绫诲紓甯革紙50ms鑴夊啿锛�- 搴斿垏鎹㈠埌50ms鑴夊啿...\r\n");
+  Alarm_SetError(ERROR_TYPE_B);
+  for(int i = 0; i < 10; i++) {
+      HAL_Delay(100);
+      Alarm_Update();
+  }
+  
+  printf("  鍐嶈缃甂绫诲紓甯革紙鎸佺画鍝嶏級- 搴斿垏鎹㈠埌鎸佺画鍝�...\r\n");
+  Alarm_SetError(ERROR_TYPE_K);
+  for(int i = 0; i < 3; i++) {
+      HAL_Delay(1000);
+      Alarm_Update();
+  }
+  
+  Alarm_PrintStatus();
+  printf("  娓呴櫎鎵€鏈夊紓甯�...\r\n");
+  Alarm_ClearAll();
+  Alarm_PrintStatus();
+  HAL_Delay(1000);
+  
+  printf("\r\n========== Phase 6 Test PASS ==========\r\n\r\n");
   HAL_Delay(10);
 
   /* USER CODE END 2 */

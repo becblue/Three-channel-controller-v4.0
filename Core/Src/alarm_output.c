@@ -1,0 +1,347 @@
+/* USER CODE BEGIN Header */
+/**
+  ******************************************************************************
+  * @file           : alarm_output.c
+  * @brief          : 报警输出控制模块实现
+  * @author         : Three-channel Controller Team
+  * @date           : 2026-02-12
+  ******************************************************************************
+  */
+/* USER CODE END Header */
+
+/* Includes ------------------------------------------------------------------*/
+#include "alarm_output.h"
+#include "gpio.h"
+#include <stdio.h>
+#include <string.h>
+
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+/* Private macro -------------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+
+// 报警管理器实例
+static Alarm_Manager_t alarm_manager = {0};
+
+/* Private function prototypes -----------------------------------------------*/
+static void alarm_update_beep_mode(void);
+static void alarm_update_gpio(void);
+static void alarm_beep_pulse_handler(void);
+
+/* Exported functions --------------------------------------------------------*/
+
+/**
+ * @brief  报警模块初始化
+ */
+void Alarm_Init(void)
+{
+    // 清零结构体
+    memset(&alarm_manager, 0, sizeof(Alarm_Manager_t));
+    
+    // 初始化GPIO状态（高电平-无报警）
+    HAL_GPIO_WritePin(ALARM_GPIO_Port, ALARM_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, GPIO_PIN_SET);
+    
+    // 初始化参数
+    alarm_manager.error_flags = ERROR_TYPE_NONE;
+    alarm_manager.beep_mode = BEEP_MODE_OFF;
+    alarm_manager.beep_state = false;
+    alarm_manager.alarm_active = false;
+    alarm_manager.beep_timer = 0;
+    alarm_manager.initialized = true;
+    
+    printf("[Alarm] 模块初始化完成\r\n");
+    printf("[Alarm] ALARM引脚: PB4（高电平=正常）\r\n");
+    printf("[Alarm] BEEP引脚:  PB3（高电平=静音）\r\n");
+}
+
+/**
+ * @brief  设置异常标志
+ */
+void Alarm_SetError(ErrorType_e error_type)
+{
+    if (!alarm_manager.initialized) return;
+    
+    // 如果是新异常，记录日志
+    if ((alarm_manager.error_flags & error_type) == 0)
+    {
+        printf("[Alarm] 设置异常: 0x%04X (%s)\r\n", 
+               error_type, CommonDef_GetErrorString(error_type));
+    }
+    
+    // 设置异常标志（位或操作）
+    alarm_manager.error_flags |= error_type;
+    
+    // 更新蜂鸣器模式
+    alarm_update_beep_mode();
+    
+    // 立即更新GPIO状态
+    alarm_update_gpio();
+}
+
+/**
+ * @brief  清除异常标志
+ */
+void Alarm_ClearError(ErrorType_e error_type)
+{
+    if (!alarm_manager.initialized) return;
+    
+    // 如果异常存在，记录日志
+    if ((alarm_manager.error_flags & error_type) != 0)
+    {
+        printf("[Alarm] 清除异常: 0x%04X (%s)\r\n", 
+               error_type, CommonDef_GetErrorString(error_type));
+    }
+    
+    // 清除异常标志（位与非操作）
+    alarm_manager.error_flags &= ~error_type;
+    
+    // 更新蜂鸣器模式
+    alarm_update_beep_mode();
+    
+    // 立即更新GPIO状态
+    alarm_update_gpio();
+}
+
+/**
+ * @brief  检查是否有任何异常
+ */
+bool Alarm_HasError(void)
+{
+    return ALARM_HAS_ERROR(alarm_manager.error_flags);
+}
+
+/**
+ * @brief  获取当前异常标志位图
+ */
+uint16_t Alarm_GetErrorFlags(void)
+{
+    return alarm_manager.error_flags;
+}
+
+/**
+ * @brief  获取当前蜂鸣器模式
+ */
+BeepMode_e Alarm_GetBeepMode(void)
+{
+    return alarm_manager.beep_mode;
+}
+
+/**
+ * @brief  更新报警状态（非阻塞）
+ */
+void Alarm_Update(void)
+{
+    if (!alarm_manager.initialized) return;
+    
+    // 处理蜂鸣器脉冲逻辑
+    alarm_beep_pulse_handler();
+    
+    // 更新GPIO状态
+    alarm_update_gpio();
+}
+
+/**
+ * @brief  打印报警状态（调试用）
+ */
+void Alarm_PrintStatus(void)
+{
+    printf("\r\n========================================\r\n");
+    printf("          报警状态\r\n");
+    printf("========================================\r\n");
+    
+    // 异常标志
+    printf("异常标志: 0x%04X\r\n", alarm_manager.error_flags);
+    if (alarm_manager.error_flags != ERROR_TYPE_NONE)
+    {
+        printf("  活动异常列表:\r\n");
+        for (int i = 0; i < 15; i++)
+        {
+            ErrorType_e err = (1 << i);
+            if (alarm_manager.error_flags & err)
+            {
+                printf("    - %s\r\n", CommonDef_GetErrorString(err));
+            }
+        }
+    }
+    else
+    {
+        printf("  无异常\r\n");
+    }
+    
+    // 蜂鸣器模式
+    printf("\r\n蜂鸣器模式: ");
+    switch (alarm_manager.beep_mode)
+    {
+        case BEEP_MODE_OFF:
+            printf("关闭\r\n");
+            break;
+        case BEEP_MODE_CONTINUOUS:
+            printf("持续响（温度异常）\r\n");
+            break;
+        case BEEP_MODE_PULSE_50MS:
+            printf("50ms脉冲（状态反馈异常）\r\n");
+            break;
+        case BEEP_MODE_PULSE_1S:
+            printf("1秒脉冲（冲突/自检异常）\r\n");
+            break;
+        default:
+            printf("未知\r\n");
+            break;
+    }
+    
+    // GPIO状态
+    printf("\r\nGPIO状态:\r\n");
+    printf("  ALARM: %s\r\n", alarm_manager.alarm_active ? "低电平（报警）" : "高电平（正常）");
+    printf("  BEEP:  %s\r\n", alarm_manager.beep_state ? "响" : "静");
+    
+    printf("========================================\r\n\r\n");
+}
+
+/**
+ * @brief  清除所有异常标志（强制复位）
+ */
+void Alarm_ClearAll(void)
+{
+    printf("[Alarm] 清除所有异常标志\r\n");
+    alarm_manager.error_flags = ERROR_TYPE_NONE;
+    alarm_manager.beep_mode = BEEP_MODE_OFF;
+    alarm_manager.beep_state = false;
+    alarm_manager.alarm_active = false;
+    alarm_manager.beep_timer = 0;
+    
+    // 关闭所有报警输出
+    HAL_GPIO_WritePin(ALARM_GPIO_Port, ALARM_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, GPIO_PIN_SET);
+}
+
+/**
+ * @brief  获取报警管理器指针（调试用）
+ */
+const Alarm_Manager_t* Alarm_GetManager(void)
+{
+    return &alarm_manager;
+}
+
+/* Private functions ---------------------------------------------------------*/
+
+/**
+ * @brief  更新蜂鸣器模式（根据异常优先级）
+ * @note   优先级：温度异常 > 状态反馈异常 > 冲突/自检异常
+ */
+static void alarm_update_beep_mode(void)
+{
+    BeepMode_e old_mode = alarm_manager.beep_mode;
+    
+    // 无异常 - 关闭蜂鸣器
+    if (alarm_manager.error_flags == ERROR_TYPE_NONE)
+    {
+        alarm_manager.beep_mode = BEEP_MODE_OFF;
+    }
+    // 温度异常（K~M）- 最高优先级，持续响
+    else if (ALARM_HAS_TEMP_ERROR(alarm_manager.error_flags))
+    {
+        alarm_manager.beep_mode = BEEP_MODE_CONTINUOUS;
+    }
+    // 状态反馈异常（B~J）- 50ms脉冲
+    else if (ALARM_HAS_FEEDBACK_ERROR(alarm_manager.error_flags))
+    {
+        alarm_manager.beep_mode = BEEP_MODE_PULSE_50MS;
+    }
+    // 冲突/自检异常（A、N、O）- 1秒脉冲
+    else if (ALARM_HAS_CONFLICT_ERROR(alarm_manager.error_flags))
+    {
+        alarm_manager.beep_mode = BEEP_MODE_PULSE_1S;
+    }
+    
+    // 模式切换时重置定时器
+    if (old_mode != alarm_manager.beep_mode)
+    {
+        alarm_manager.beep_timer = HAL_GetTick();
+        alarm_manager.beep_state = false;
+        
+        printf("[Alarm] 蜂鸣器模式切换: %d -> %d\r\n", old_mode, alarm_manager.beep_mode);
+    }
+}
+
+/**
+ * @brief  更新GPIO状态
+ */
+static void alarm_update_gpio(void)
+{
+    // ALARM引脚：有任何异常时输出低电平
+    bool new_alarm_state = ALARM_HAS_ERROR(alarm_manager.error_flags);
+    if (new_alarm_state != alarm_manager.alarm_active)
+    {
+        alarm_manager.alarm_active = new_alarm_state;
+        HAL_GPIO_WritePin(ALARM_GPIO_Port, ALARM_Pin, 
+                         new_alarm_state ? GPIO_PIN_RESET : GPIO_PIN_SET);
+    }
+    
+    // BEEP引脚：根据蜂鸣器状态控制
+    GPIO_PinState beep_pin_state = alarm_manager.beep_state ? GPIO_PIN_RESET : GPIO_PIN_SET;
+    HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, beep_pin_state);
+}
+
+/**
+ * @brief  蜂鸣器脉冲处理
+ * @note   根据当前模式生成非阻塞脉冲
+ */
+static void alarm_beep_pulse_handler(void)
+{
+    uint32_t current_time = HAL_GetTick();
+    uint32_t elapsed = current_time - alarm_manager.beep_timer;
+    
+    switch (alarm_manager.beep_mode)
+    {
+        case BEEP_MODE_OFF:
+            // 关闭模式 - 静音
+            alarm_manager.beep_state = false;
+            break;
+            
+        case BEEP_MODE_CONTINUOUS:
+            // 持续模式 - 一直响
+            alarm_manager.beep_state = true;
+            break;
+            
+        case BEEP_MODE_PULSE_50MS:
+            // 50ms脉冲模式：50ms响 + 50ms静
+            if (elapsed < BEEP_PULSE_ON_50MS)
+            {
+                alarm_manager.beep_state = true;  // 响
+            }
+            else if (elapsed < BEEP_PULSE_PERIOD_50MS)
+            {
+                alarm_manager.beep_state = false; // 静
+            }
+            else
+            {
+                // 周期结束，重置定时器
+                alarm_manager.beep_timer = current_time;
+                alarm_manager.beep_state = true;
+            }
+            break;
+            
+        case BEEP_MODE_PULSE_1S:
+            // 1秒脉冲模式：1s响 + 1s静
+            if (elapsed < BEEP_PULSE_ON_1S)
+            {
+                alarm_manager.beep_state = true;  // 响
+            }
+            else if (elapsed < BEEP_PULSE_PERIOD_1S)
+            {
+                alarm_manager.beep_state = false; // 静
+            }
+            else
+            {
+                // 周期结束，重置定时器
+                alarm_manager.beep_timer = current_time;
+                alarm_manager.beep_state = true;
+            }
+            break;
+            
+        default:
+            alarm_manager.beep_state = false;
+            break;
+    }
+}
