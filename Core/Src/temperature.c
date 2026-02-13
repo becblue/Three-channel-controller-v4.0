@@ -35,6 +35,10 @@ typedef struct {
 // Temperature manager
 static Temperature_Manager_t temp_manager = {0};
 
+// Fan speed measurement
+volatile uint32_t fan_pulse_count = 0;  // Pulse counter (reset every 1s)
+static uint32_t last_update_tick = 0;   // Last 1s update timestamp
+
 // NTC lookup table: Temperature -> Resistance (based on CSV data)
 static const NTC_Table_Entry_t ntc_table[] = {
     {-40,197.39},{-39,186.54},{-38,176.35},{-37,166.8},{-36,157.82},{-35,149.39},{-34,141.51},{-33,134.09},{-32,127.11},{-31,120.53},
@@ -93,16 +97,29 @@ void Temperature_Init(void)
     Temperature_SetFanSpeed(FAN_SPEED_NORMAL);
     temp_manager.initialized = true;
     
+    // Initialize fan speed measurement
+    temp_manager.fan_rpm = 0;
+    fan_pulse_count = 0;
+    last_update_tick = HAL_GetTick();
+    
     printf("[Temperature] Module initialized\r\n");
     printf("[Temperature] ADC+DMA started for %d channels\r\n", TEMP_CHANNEL_COUNT);
     printf("[Temperature] Fan PWM started at %d%%\r\n", temp_manager.fan_speed);
     printf("[Temperature] Lookup table: %d points\r\n", NTC_TABLE_SIZE);
     printf("[Temperature] Calculation: ADC->Voltage->Resistance->Temperature\r\n");
+    printf("[Temperature] Fan RPM measurement enabled (PC12)\r\n");
 }
 
 void Temperature_Update(void)
 {
     if (!temp_manager.initialized) return;
+    
+    // Check if 1 second has elapsed for RPM calculation
+    uint32_t current_tick = HAL_GetTick();
+    if ((current_tick - last_update_tick) >= 1000) {
+        Temperature_1sHandler();
+        last_update_tick = current_tick;
+    }
     
     // Process all channels: ADC -> Voltage -> Resistance -> Temperature
     for (int i = 0; i < TEMP_CHANNEL_COUNT; i++)
@@ -143,6 +160,36 @@ uint8_t Temperature_GetFanSpeed(void)
     return temp_manager.fan_speed;
 }
 
+/**
+ * @brief Get fan RPM
+ */
+uint16_t Temperature_GetFanRPM(void)
+{
+    return temp_manager.fan_rpm;
+}
+
+/**
+ * @brief Fan pulse interrupt handler (called from EXTI ISR)
+ * @note Increment pulse counter on FAN_SEN falling edge
+ */
+void Temperature_FanPulseISR(void)
+{
+    fan_pulse_count++;
+}
+
+/**
+ * @brief 1-second handler for RPM calculation
+ * @note Call this every 1 second from timer or main loop
+ */
+void Temperature_1sHandler(void)
+{
+    // Calculate RPM: (pulse_count * 60) / pulses_per_revolution
+    temp_manager.fan_rpm = (fan_pulse_count * 60) / FAN_PULSE_PER_REV;
+    
+    // Reset counter
+    fan_pulse_count = 0;
+}
+
 uint8_t Temperature_GetOverheatFlag(uint8_t channel)
 {
     if (channel < TEMP_CHANNEL_COUNT)
@@ -181,7 +228,7 @@ void Temperature_PrintStatus(void)
         printf(" (HIGH SPEED)");
     else
         printf(" (NORMAL)");
-    printf("\r\n");
+    printf(" | RPM: %d\r\n", temp_manager.fan_rpm);
     printf("========================================\r\n\r\n");
 }
 

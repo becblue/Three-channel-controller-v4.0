@@ -262,4 +262,18 @@ void EXTI15_10_IRQHandler(void)
 
 /* USER CODE BEGIN 1 */
 
+/**
+ * @brief EXTI line detection callback
+ * @param GPIO_Pin: Specifies the port pin connected EXTI line
+ */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if (GPIO_Pin == FAN_SEN_Pin)
+    {
+        // Fan pulse detected - increment counter
+        extern void Temperature_FanPulseISR(void);
+        Temperature_FanPulseISR();
+    }
+}
+
 /* USER CODE END 1 */

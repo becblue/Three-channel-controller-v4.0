@@ -43,6 +43,7 @@ typedef struct {
     uint16_t adc_filtered[3];   ///< 滤波后的ADC值
     int16_t temperature[3];     ///< 温度值（0.1°C单位）
     uint8_t fan_speed;          ///< 风扇PWM占空比（0-100%）
+    uint16_t fan_rpm;           ///< 风扇实际转速（RPM）
     uint8_t overheat_flag[3];   ///< 过温标志（0-正常，1-35°C告警，2-60°C告警）
     bool initialized;           ///< 初始化标志
 } Temperature_Manager_t;
@@ -64,6 +65,11 @@ typedef struct {
  */
 #define FAN_SPEED_NORMAL        50      ///< 正常风扇速度：50%
 #define FAN_SPEED_HIGH          95      ///< 高速风扇速度：95%
+
+/**
+ * @brief 风扇转速测量参数
+ */
+#define FAN_PULSE_PER_REV       2       ///< 每转脉冲数（根据风扇规格确定）
 
 /**
  * @brief 过温标志定义
@@ -139,6 +145,26 @@ void Temperature_SetFanSpeed(uint8_t speed);
  * @retval 温度管理器数据结构指针
  */
 const Temperature_Manager_t* Temperature_GetManager(void);
+
+/**
+ * @brief  获取风扇转速（RPM）
+ * @retval 风扇转速（转/分钟）
+ */
+uint16_t Temperature_GetFanRPM(void);
+
+/**
+ * @brief  风扇脉冲中断处理（由外部中断调用）
+ * @note   每检测到FAN_SEN下降沿时调用
+ * @retval None
+ */
+void Temperature_FanPulseISR(void);
+
+/**
+ * @brief  1秒定时更新（由定时器或主循环调用）
+ * @note   计算风扇转速，清零脉冲计数器
+ * @retval None
+ */
+void Temperature_1sHandler(void);
 
 #ifdef __cplusplus
 }

@@ -146,11 +146,12 @@ int main(void)
     Temperature_Update();
     
     // Phase 5 Test: Continuous OLED update with temperature info
-    HAL_Delay(5000);
+    HAL_Delay(500);  // Changed from 5000ms to 500ms
     
-    // Get temperature values
+    // Get temperature values and fan RPM
     int16_t t1, t2, t3;
     Temperature_GetValues(&t1, &t2, &t3);
+    uint16_t fan_rpm = Temperature_GetFanRPM();
     
     // Update OLED display
     OLED_Clear();
@@ -167,16 +168,17 @@ int main(void)
     snprintf(temp_str, sizeof(temp_str), "T3:%d.%dC", t3/10, abs(t3%10));
     OLED_ShowString(0, 4, temp_str, OLED_FONT_6X8);
     
-    snprintf(temp_str, sizeof(temp_str), "FAN:%d%%", Temperature_GetFanSpeed());
+    // Show fan RPM instead of percentage
+    snprintf(temp_str, sizeof(temp_str), "FAN:%d RPM", fan_rpm);
     OLED_ShowString(0, 6, temp_str, OLED_FONT_6X8);
     
     OLED_Refresh();
     
     // UART output
     UART_PrintTimestamp();
-    printf("T1:%d.%dC T2:%d.%dC T3:%d.%dC FAN:%d%% - Phase 5 OK\r\n",
+    printf("T1:%d.%dC T2:%d.%dC T3:%d.%dC FAN:%d RPM - Phase 5 OK\r\n",
            t1/10, abs(t1%10), t2/10, abs(t2%10), t3/10, abs(t3%10),
-           Temperature_GetFanSpeed());
+           fan_rpm);
   }
   /* USER CODE END 3 */
 }
