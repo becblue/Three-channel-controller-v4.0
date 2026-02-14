@@ -17,6 +17,10 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
+#ifndef EN_PIN_VERIFY_DELAY_MS
+#define EN_PIN_VERIFY_DELAY_MS  100    // EN pin verify delay: 100ms (increased for better stability)
+#endif
+
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 
@@ -123,6 +127,20 @@ void Relay_Init(void)
     
     relay_manager.active_channel = CHANNEL_NONE;
     relay_manager.last_update_time = HAL_GetTick();
+    // 初始化EN引脚中断管理结构
+    for (int i = 0; i < 3; i++)
+    {
+        relay_manager.channels[i].en_int.interrupt_flag = 0;
+        relay_manager.channels[i].en_int.interrupt_time = 0;
+        relay_manager.channels[i].en_int.verify_step = 0;
+        
+        // 读取并记录EN引脚的初始状态
+        GPIO_TypeDef *en_port = relay_manager.channels[i].en_port;
+        uint16_t en_pin = relay_manager.channels[i].en_pin;
+        relay_manager.channels[i].en_int.last_pin_state = HAL_GPIO_ReadPin(en_port, en_pin);
+        relay_manager.channels[i].en_int.pending_pin_state = GPIO_PIN_RESET;
+    }
+    
     relay_manager.initialized = true;
     
     printf("[Relay] Module initialized\r\n");
@@ -269,44 +287,83 @@ void Relay_Update(void)
 {
     if (!relay_manager.initialized) return;
     
-    // Static variables for debouncing
-    static uint32_t last_op_time[3] = {0, 0, 0};
-    static RelayOperation_e last_op[3] = {RELAY_OP_NONE, RELAY_OP_NONE, RELAY_OP_NONE};
+    // Process EN pin interrupt verification (NEW APPROACH)
+    for (int i = 0; i < 3; i++)
+    {
+        EN_InterruptManager_t *en_int = &relay_manager.channels[i].en_int;
+        GPIO_TypeDef *en_port = relay_manager.channels[i].en_port;
+        uint16_t en_pin = relay_manager.channels[i].en_pin;
+        
+        // Step 0: Check interrupt flag
+        if (en_int->interrupt_flag && en_int->verify_step == 0)
+        {
+            // First reading after interrupt
+            en_int->pending_pin_state = HAL_GPIO_ReadPin(en_port, en_pin);
+            en_int->verify_step = 1;
+            en_int->interrupt_time = HAL_GetTick(); // Start verification timer
+        }
+        
+        // Step 1: Wait for stabilization period, then verify
+        else if (en_int->verify_step == 1)
+        {
+            uint32_t current_time = HAL_GetTick();
+            
+            // Check if delay period has elapsed (non-blocking)
+            if ((current_time - en_int->interrupt_time) >= EN_PIN_VERIFY_DELAY_MS)
+            {
+                // Second reading after delay
+                GPIO_PinState current_state = HAL_GPIO_ReadPin(en_port, en_pin);
+                
+                // Verification 1: Are two readings consistent?
+                if (current_state == en_int->pending_pin_state)
+                {
+                    // Verification 2: Did the state actually change? (KEY!)
+                    if (current_state != en_int->last_pin_state)
+                    {
+                        // State changed - this is a valid trigger
+                        if (current_state == GPIO_PIN_RESET)
+                        {
+                            relay_manager.channels[i].pending_op = RELAY_OP_OPEN;
+                            printf("[ISR] K%d_EN interrupt triggered, opening CH%d...\r\n", i+1, i+1);
+                        }
+                        else
+                        {
+                            relay_manager.channels[i].pending_op = RELAY_OP_CLOSE;
+                            printf("[ISR] K%d_EN interrupt triggered, closing CH%d...\r\n", i+1, i+1);
+                        }
+                        
+                        // Update last state
+                        en_int->last_pin_state = current_state;
+                    }
+                    // else: State did not change, ignore (FILTERS FALSE TRIGGERS!)
+                }
+                // else: Two readings inconsistent, ignore (noise)
+                
+                // Reset verification process
+                en_int->interrupt_flag = 0;
+                en_int->verify_step = 0;
+            }
+            // else: Still waiting for delay period, do nothing (non-blocking)
+        }
+    }
     
-    // Process pending operations from interrupts
+    // Process pending operations
     for (int i = 0; i < 3; i++)
     {
         if (relay_manager.channels[i].pending_op != RELAY_OP_NONE)
         {
-            // Save pending operation
             RelayOperation_e op = relay_manager.channels[i].pending_op;
-            uint32_t current_time = HAL_GetTick();
-            
-            // Clear pending flag first to avoid re-entry
             relay_manager.channels[i].pending_op = RELAY_OP_NONE;
-            
-            // Debounce check: ignore same operation within 200ms
-            if (op == last_op[i] && (current_time - last_op_time[i]) < 200)
-            {
-                // Duplicate operation, ignore (likely noise or manual bounce)
-                continue;
-            }
-            
-            // Record this operation
-            last_op[i] = op;
-            last_op_time[i] = current_time;
             
             // Execute operation
             if (op == RELAY_OP_OPEN)
             {
-                printf("[ISR] K%d_EN interrupt triggered, opening CH%d...\r\n", i+1, i+1);
                 if (i == 0) Relay_OpenChannel(CHANNEL_1);
                 else if (i == 1) Relay_OpenChannel(CHANNEL_2);
                 else if (i == 2) Relay_OpenChannel(CHANNEL_3);
             }
             else if (op == RELAY_OP_CLOSE)
             {
-                printf("[ISR] K%d_EN interrupt triggered, closing CH%d...\r\n", i+1, i+1);
                 if (i == 0) Relay_CloseChannel(CHANNEL_1);
                 else if (i == 1) Relay_CloseChannel(CHANNEL_2);
                 else if (i == 2) Relay_CloseChannel(CHANNEL_3);
@@ -383,31 +440,10 @@ void Relay_PrintStatus(void)
  */
 void Relay_K1_EN_ISR(void)
 {
-    // Read pin state (first reading)
-    GPIO_PinState en_state_1 = HAL_GPIO_ReadPin(K1_EN_GPIO_Port, K1_EN_Pin);
-    
-    // Small delay for debounce (wait for signal to stabilize)
-    for (volatile int i = 0; i < 100; i++);  // ~10us delay
-    
-    // Read pin state again (second reading)
-    GPIO_PinState en_state_2 = HAL_GPIO_ReadPin(K1_EN_GPIO_Port, K1_EN_Pin);
-    
-    // Only process if both readings are consistent
-    if (en_state_1 != en_state_2)
-    {
-        // State unstable, likely noise, ignore
-        return;
-    }
-    
-    // State is stable, process operation
-    if (en_state_1 == GPIO_PIN_RESET)  // LOW level - open channel 1
-    {
-        relay_manager.channels[0].pending_op = RELAY_OP_OPEN;
-    }
-    else  // HIGH level - close channel 1
-    {
-        relay_manager.channels[0].pending_op = RELAY_OP_CLOSE;
-    }
+    // Only set interrupt flag - completely non-blocking
+    relay_manager.channels[0].en_int.interrupt_flag = 1;
+    relay_manager.channels[0].en_int.interrupt_time = HAL_GetTick();
+    // Done! < 1us execution time
 }
 
 /**
@@ -415,31 +451,10 @@ void Relay_K1_EN_ISR(void)
  */
 void Relay_K2_EN_ISR(void)
 {
-    // Read pin state (first reading)
-    GPIO_PinState en_state_1 = HAL_GPIO_ReadPin(K2_EN_GPIO_Port, K2_EN_Pin);
-    
-    // Small delay for debounce (wait for signal to stabilize)
-    for (volatile int i = 0; i < 100; i++);  // ~10us delay
-    
-    // Read pin state again (second reading)
-    GPIO_PinState en_state_2 = HAL_GPIO_ReadPin(K2_EN_GPIO_Port, K2_EN_Pin);
-    
-    // Only process if both readings are consistent
-    if (en_state_1 != en_state_2)
-    {
-        // State unstable, likely noise, ignore
-        return;
-    }
-    
-    // State is stable, process operation
-    if (en_state_1 == GPIO_PIN_RESET)  // LOW level - open channel 2
-    {
-        relay_manager.channels[1].pending_op = RELAY_OP_OPEN;
-    }
-    else  // HIGH level - close channel 2
-    {
-        relay_manager.channels[1].pending_op = RELAY_OP_CLOSE;
-    }
+    // Only set interrupt flag - completely non-blocking
+    relay_manager.channels[1].en_int.interrupt_flag = 1;
+    relay_manager.channels[1].en_int.interrupt_time = HAL_GetTick();
+    // Done! < 1us execution time
 }
 
 /**
@@ -447,31 +462,10 @@ void Relay_K2_EN_ISR(void)
  */
 void Relay_K3_EN_ISR(void)
 {
-    // Read pin state (first reading)
-    GPIO_PinState en_state_1 = HAL_GPIO_ReadPin(K3_EN_GPIO_Port, K3_EN_Pin);
-    
-    // Small delay for debounce (wait for signal to stabilize)
-    for (volatile int i = 0; i < 100; i++);  // ~10us delay
-    
-    // Read pin state again (second reading)
-    GPIO_PinState en_state_2 = HAL_GPIO_ReadPin(K3_EN_GPIO_Port, K3_EN_Pin);
-    
-    // Only process if both readings are consistent
-    if (en_state_1 != en_state_2)
-    {
-        // State unstable, likely noise, ignore
-        return;
-    }
-    
-    // State is stable, process operation
-    if (en_state_1 == GPIO_PIN_RESET)  // LOW level - open channel 3
-    {
-        relay_manager.channels[2].pending_op = RELAY_OP_OPEN;
-    }
-    else  // HIGH level - close channel 3
-    {
-        relay_manager.channels[2].pending_op = RELAY_OP_CLOSE;
-    }
+    // Only set interrupt flag - completely non-blocking
+    relay_manager.channels[2].en_int.interrupt_flag = 1;
+    relay_manager.channels[2].en_int.interrupt_time = HAL_GetTick();
+    // Done! < 1us execution time
 }
 
 /**

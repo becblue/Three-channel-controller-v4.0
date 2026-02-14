@@ -215,32 +215,13 @@ int main(void)
   printf("\r\n========== Phase 7 Test ==========\r\n");
   printf("Testing relay control module...\r\n\r\n");
   
-  // TEMPORARY FIX: Force all EN pins to pull-up mode (fix floating/interference issue)
-  GPIO_InitTypeDef test_gpio = {0};
-  
-  // K1_EN (PB9) - force pull-up
-  test_gpio.Pin = K1_EN_Pin;
-  test_gpio.Mode = GPIO_MODE_IT_RISING_FALLING;
-  test_gpio.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(K1_EN_GPIO_Port, &test_gpio);
-  
-  // K2_EN (PB8) - force pull-up
-  test_gpio.Pin = K2_EN_Pin;
-  test_gpio.Mode = GPIO_MODE_IT_RISING_FALLING;
-  test_gpio.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(K2_EN_GPIO_Port, &test_gpio);
-  
-  // K3_EN (PA15) - force pull-up
-  test_gpio.Pin = K3_EN_Pin;
-  test_gpio.Mode = GPIO_MODE_IT_RISING_FALLING;
-  test_gpio.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(K3_EN_GPIO_Port, &test_gpio);
-  
-  printf("[DEBUG] All EN pins (K1/K2/K3) reconfigured with pull-up\r\n\r\n");
-  
   // Initialize relay module
   Relay_Init();
   HAL_Delay(500);
+  
+  // Initialize other modules
+  Temperature_Init();
+  Alarm_Init();
   
   printf("\r\n========== External Interrupt Test Mode ==========\r\n");
   printf("Testing K1_EN/K2_EN/K3_EN interrupt control...\r\n\r\n");
