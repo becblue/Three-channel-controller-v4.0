@@ -1,4 +1,4 @@
-﻿/* USER CODE BEGIN Header */
+/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
   * @file           : main.c
@@ -62,7 +62,7 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
+static void update_oled_main_screen(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -107,153 +107,26 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-  
-  // Test UART output
-  HAL_UART_Transmit(&huart1, (uint8_t*)"UART Test Start\r\n", 17, 100);
-  HAL_Delay(100);
-  
-  printf("Printf Test OK\r\n");
-  HAL_Delay(100);
-  
-  // Initialize Phase 4 - Temperature Detection and Fan Control
-  printf("\r\n[System] Initializing temperature module...\r\n");
+  printf("[System] Boot v4.0 - Three-channel Controller\r\n");
+
   Temperature_Init();
-  printf("[System] Temperature module ready\r\n\r\n");
-  HAL_Delay(100);
-  
-  // Phase 5 Test: OLED Display Module
-  printf("\r\n========== Phase 5 Test ==========\r\n");
-  printf("Testing OLED display module...\r\n\r\n");
-  
-  // Initialize OLED
   OLED_Init();
-  printf("\r\n");
-  HAL_Delay(500);
-  
-  // Run OLED test
-  OLED_Test();
-  
-  printf("\r\n========== Phase 5 Test PASS ==========\r\n\r\n");
-  HAL_Delay(10);
-  
-  // Phase 6 Test: Alarm Output Control
-  printf("\r\n========== Phase 6 Test ==========\r\n");
-  printf("Testing alarm output control module...\r\n\r\n");
-  
-  // Initialize alarm module
   Alarm_Init();
-  HAL_Delay(500);
-  
-  // Test 1: Type-A error (1s pulse)
-  printf("[Test 1] Type-A Error - 1s pulse test\r\n");
-  Alarm_SetError(ERROR_TYPE_A);
-  Alarm_PrintStatus();
-  for(int i = 0; i < 5; i++) {
-      printf("  [%d] Beep should pulse at 1s interval...\r\n", i+1);
-      HAL_Delay(1000);
-      Alarm_Update();
-  }
-  Alarm_ClearError(ERROR_TYPE_A);
-  printf("  Type-A error cleared\r\n\r\n");
-  HAL_Delay(1000);
-  
-  // Test 2: Type-B error (50ms pulse)
-  printf("[Test 2] Type-B Error - 50ms pulse test\r\n");
-  Alarm_SetError(ERROR_TYPE_B);
-  Alarm_PrintStatus();
-  for(int i = 0; i < 20; i++) {
-      if (i % 5 == 0) printf("  [%d] Beep should pulse at 50ms interval...\r\n", i/5+1);
-      HAL_Delay(100);
-      Alarm_Update();
-  }
-  Alarm_ClearError(ERROR_TYPE_B);
-  printf("  Type-B error cleared\r\n\r\n");
-  HAL_Delay(1000);
-  
-  // Test 3: Type-K error (continuous beep)
-  printf("[Test 3] Type-K Error - continuous beep test\r\n");
-  Alarm_SetError(ERROR_TYPE_K);
-  Alarm_PrintStatus();
-  for(int i = 0; i < 5; i++) {
-      printf("  [%d] Beep should be continuous...\r\n", i+1);
-      HAL_Delay(1000);
-      Alarm_Update();
-  }
-  Alarm_ClearError(ERROR_TYPE_K);
-  printf("  Type-K error cleared\r\n\r\n");
-  HAL_Delay(1000);
-  
-  // Test 4: Multiple error priority test
-  printf("[Test 4] Multiple error priority test\r\n");
-  printf("  Set Type-A error (1s pulse)...\r\n");
-  Alarm_SetError(ERROR_TYPE_A);
-  Alarm_Update();
-  HAL_Delay(2000);
-  
-  printf("  Add Type-B error (50ms pulse) - should switch to 50ms...\r\n");
-  Alarm_SetError(ERROR_TYPE_B);
-  for(int i = 0; i < 10; i++) {
-      HAL_Delay(100);
-      Alarm_Update();
-  }
-  
-  printf("  Add Type-K error (continuous) - should switch to continuous...\r\n");
-  Alarm_SetError(ERROR_TYPE_K);
-  for(int i = 0; i < 3; i++) {
-      HAL_Delay(1000);
-      Alarm_Update();
-  }
-  
-  Alarm_PrintStatus();
-  printf("  Clear all errors...\r\n");
-  Alarm_ClearAll();
-  Alarm_PrintStatus();
-  HAL_Delay(1000);
-  
-  printf("\r\n========== Phase 6 Test PASS ==========\r\n\r\n");
-  HAL_Delay(10);
-  
-  // Phase 7: Relay Control Module Test (Cycle Mode)
-  printf("\r\n========== Phase 7 Test ==========\r\n");
-  printf("Testing relay control module...\r\n\r\n");
-  
-  // Initialize relay module
   Relay_Init();
-  HAL_Delay(500);
-  
-  // Initialize other modules
-  Temperature_Init();
-  Alarm_Init();
-  
-  printf("\r\n========== External Interrupt Test Mode ==========\r\n");
-  printf("Testing K1_EN/K2_EN/K3_EN interrupt control...\r\n\r\n");
-  printf("[Instructions]\r\n");
-  printf("  K1_EN (PB9):  LOW=Open CH1,  HIGH=Close CH1\r\n");
-  printf("  K2_EN (PB8):  LOW=Open CH2,  HIGH=Close CH2\r\n");
-  printf("  K3_EN (PA15): LOW=Open CH3,  HIGH=Close CH3\r\n\r\n");
-  printf("[Hardware Setup]\r\n");
-  printf("  - Connect K1_EN/K2_EN/K3_EN to GND (LOW) or 3.3V (HIGH)\r\n");
-  printf("  - Use jumper or switch to change levels\r\n");
-  printf("  - Observe serial output and relay actions\r\n\r\n");
-  printf("[Status Monitor Started - Change EN pins to test]\r\n\r\n");
-
-  // Phase 8: Safety Monitor Module
-  printf("\r\n========== Phase 8: Safety Monitor ==========\r\n");
   Safety_Init();
-  printf("[Safety] Module ready, monitoring started\r\n\r\n");
 
-  // Phase 9: Self Test
-  printf("\r\n========== Phase 9: Self Test ==========\r\n");
+  printf("[System] All modules initialized, starting self-test\r\n");
   SelfTest_Start();
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  uint32_t tick_20ms    = 0U;
-  uint32_t tick_50ms    = 0U;
-  uint32_t tick_100ms   = 0U;
-  uint32_t tick_1s      = 0U;
+  uint32_t tick_20ms     = 0U;
+  uint32_t tick_50ms     = 0U;
+  uint32_t tick_100ms    = 0U;
+  uint32_t tick_500ms    = 0U;
+  uint32_t tick_1s       = 0U;
   uint32_t tick_selftest = 0U;
 
   while (1)
@@ -280,7 +153,7 @@ int main(void)
 
     if (SelfTest_IsRunning())
     {
-      /* During self-test: advance state machine every 20ms, pause safety/temp tasks */
+      /* During self-test: advance state machine every 20ms */
       if ((now - tick_selftest) >= 20U)
       {
         tick_selftest = now;
@@ -289,13 +162,21 @@ int main(void)
     }
     else
     {
-      /* Normal operation: safety monitor + temperature update */
+      /* 100ms: safety monitor */
       if ((now - tick_100ms) >= 100U)
       {
         tick_100ms = now;
         Safety_Update();
       }
 
+      /* 500ms: OLED main screen refresh */
+      if ((now - tick_500ms) >= 500U)
+      {
+        tick_500ms = now;
+        update_oled_main_screen();
+      }
+
+      /* 1s: temperature update */
       if ((now - tick_1s) >= 1000U)
       {
         tick_1s = now;
@@ -354,6 +235,80 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+/**
+ * @brief  Update OLED runtime main screen (called every 500ms)
+ *
+ * Screen layout (128x64, 6x8 font, 8 rows):
+ *   Row 0 : Alarm status  - "Alarm: Normal" or "ERR: A B K ..."
+ *   Row 1 : separator line at y=15
+ *   Row 2 : Channel state - "CH:1=ON  2=OFF 3=OFF"
+ *   Row 3-4: reserved
+ *   Row 5 : separator line at y=47
+ *   Row 6 : Temperatures  - "25.6/27.3/24.8C"
+ *   Row 7 : Fan status    - "Fan:50%  RPM:1200"
+ */
+static void update_oled_main_screen(void)
+{
+  char      buf[22];
+  uint16_t  err_flags;
+  Channel_e active_ch;
+  int16_t   t1, t2, t3;
+  uint8_t   fan_spd;
+  uint16_t  fan_rpm;
+  uint8_t   idx;
+  uint8_t   i;
+
+  err_flags = Alarm_GetErrorFlags();
+  active_ch = Relay_GetActiveChannel();
+  Temperature_GetValues(&t1, &t2, &t3);
+  fan_spd   = Temperature_GetFanSpeed();
+  fan_rpm   = Temperature_GetFanRPM();
+
+  /* -- Alarm area (row 0~1) -- */
+  OLED_ClearArea(OLED_AREA_ALARM);
+  if (err_flags == (uint16_t)ERROR_TYPE_NONE)
+  {
+    OLED_ShowString(0, 0, "Alarm: Normal       ", OLED_FONT_6X8);
+  }
+  else
+  {
+    idx = 0U;
+    buf[idx++] = 'E'; buf[idx++] = 'R'; buf[idx++] = 'R'; buf[idx++] = ':';
+    for (i = 0U; i < 15U; i++)
+    {
+      if (((err_flags >> i) & 0x01U) != 0U)
+      {
+        if (idx < 19U) { buf[idx++] = (char)('A' + (char)i); buf[idx++] = ' '; }
+      }
+    }
+    while (idx < 20U) { buf[idx++] = ' '; }
+    buf[20] = '\0';
+    OLED_ShowString(0, 0, buf, OLED_FONT_6X8);
+  }
+  OLED_DrawLine(0, 15, 127, 15);
+
+  /* -- Channel area (row 2~5) -- */
+  OLED_ClearArea(OLED_AREA_CHANNEL);
+  snprintf(buf, sizeof(buf), "CH:1=%-3s 2=%-3s 3=%-3s",
+           (active_ch == CHANNEL_1) ? "ON" : "OFF",
+           (active_ch == CHANNEL_2) ? "ON" : "OFF",
+           (active_ch == CHANNEL_3) ? "ON" : "OFF");
+  OLED_ShowString(0, 2, buf, OLED_FONT_6X8);
+  OLED_DrawLine(0, 47, 127, 47);
+
+  /* -- Temperature area (row 6~7) -- */
+  OLED_ClearArea(OLED_AREA_TEMP);
+  snprintf(buf, sizeof(buf), "%d.%d/%d.%d/%d.%dC",
+           t1 / 10, abs(t1 % 10),
+           t2 / 10, abs(t2 % 10),
+           t3 / 10, abs(t3 % 10));
+  OLED_ShowString(0, 6, buf, OLED_FONT_6X8);
+  snprintf(buf, sizeof(buf), "Fan:%d%%  RPM:%d", fan_spd, fan_rpm);
+  OLED_ShowString(0, 7, buf, OLED_FONT_6X8);
+
+  OLED_Refresh();
+}
 
 /* USER CODE END 4 */
 
