@@ -176,12 +176,11 @@ int main(void)
         update_oled_main_screen();
       }
 
-      /* 1s: temperature update */
+      /* 1s: temperature update (1sHandler is called internally by Temperature_Update) */
       if ((now - tick_1s) >= 1000U)
       {
         tick_1s = now;
         Temperature_Update();
-        Temperature_1sHandler();
       }
     }
   }
