@@ -1415,13 +1415,23 @@ void Test_Relay(void)
 
 ### **🛡️ 阶段8：功能层 - 安全监控系统**
 
+#### **设计原则（重要）**
+
+本方案为第二版实现，在第一版严重失控后完全推翻重写，核心原则如下：
+
+1. **Alarm 是唯一错误状态源**：`safety_monitor` 不维护任何 `active_errors` 位图，直接调用 `Alarm_SetError()` / `Alarm_ClearError()`，消除双份状态同步问题。
+2. **每项检测独立 Set/Clear**：每次 `Safety_Update()` 调用时，每类异常都根据当前GPIO实时状态既可以被置位也可以被清除，不存在"只置位不清除"或"只清除不置位"的单向逻辑。
+3. **期望值直接来自 K_EN 引脚**：不使用真值表，直接读 K1_EN/K2_EN/K3_EN 电平推导期望的 STA 状态，逻辑透明。
+4. **继电器过渡期保护**：当任意通道处于切换中（`Relay_IsChannelBusy()` 为真）时，跳过 B~J 类反馈检测，防止 500ms 脉冲期间产生误报警。无需读继电器 FSM 内部状态。
+5. **最小内部状态**：模块内部仅保留 2 个字段（`initialized` + `dc_fault` ISR标志），无其他冗余状态。
+
 #### **开发内容**
-实现完整的安全监控功能：
-- 15种异常检测逻辑
-- 真值表状态判断
-- 智能异常解除机制
-- 电源监控（DC_CTRL中断）
-- 与继电器、温度、报警模块集成
+- A类：使能冲突检测（≥2路 K_EN 同时为低）
+- B~G类：6路继电器线圈 STA 反馈 vs K_EN 期望值
+- H~J类：3路接触器 STA 反馈 vs K_EN 期望值
+- K~M类：三路 NTC 过温检测（委托 temperature 模块）
+- N类：自检失败异常（由 self_test 模块主动调用接口置位/清除）
+- O类：直流电源掉电检测（直接读 DC_CTRL GPIO）
 
 #### **交付文件**
 - `Core/Inc/safety_monitor.h`
@@ -1430,59 +1440,76 @@ void Test_Relay(void)
 
 #### **核心内容**
 ```c
-// safety_monitor.h
+// safety_monitor.h — 对外API（仅5个函数）
 void Safety_Init(void);
-void Safety_Update(void);  // 主循环调用，检测所有异常
-void Safety_CheckEnableConflict(void);   // 检测A类异常
-void Safety_CheckRelayFeedback(void);    // 检测B~G类异常
-void Safety_CheckSwitchFeedback(void);   // 检测H~J类异常
-void Safety_CheckTemperature(void);      // 检测K~M类异常
-void Safety_CheckPowerSupply(void);      // 检测O类异常
-void Safety_TryClearErrors(void);        // 尝试解除异常
-void Safety_PrintStatus(void);
+void Safety_Update(void);               // 100ms调用一次，检测A/B~J/K~M/O类
+void Safety_SetSelfTestError(void);     // 供 self_test 模块调用：置位N类
+void Safety_ClearSelfTestError(void);   // 供 self_test 模块调用：清除N类
+void Safety_PrintStatus(void);          // 调试打印当前报警状态
+```
+
+```c
+// safety_monitor.c — 内部状态（仅2个字段）
+typedef struct {
+    bool     initialized;
+    volatile uint8_t dc_fault;  // DC_CTRL中断置1，polling清0（预留，当前直接读GPIO）
+} Safety_Internal_t;
+```
+
+```c
+// Safety_Update() 核心骨架
+void Safety_Update(void)
+{
+    /* ① A类：使能冲突 —— ≥2路K_EN同时为低 */
+    uint8_t low_cnt = 0;
+    if (HAL_GPIO_ReadPin(K1_EN_GPIO_Port, K1_EN_Pin) == GPIO_PIN_RESET) low_cnt++;
+    if (HAL_GPIO_ReadPin(K2_EN_GPIO_Port, K2_EN_Pin) == GPIO_PIN_RESET) low_cnt++;
+    if (HAL_GPIO_ReadPin(K3_EN_GPIO_Port, K3_EN_Pin) == GPIO_PIN_RESET) low_cnt++;
+    if (low_cnt >= 2) Alarm_SetError(ERROR_TYPE_A);
+    else              Alarm_ClearError(ERROR_TYPE_A);
+
+    /* ② B~J类：继电器/接触器反馈，切换过渡期全部跳过 */
+    if (!Relay_IsChannelBusy(CHANNEL_1) &&
+        !Relay_IsChannelBusy(CHANNEL_2) &&
+        !Relay_IsChannelBusy(CHANNEL_3))
+    {
+        // 期望值：K_EN为低（LOW）→ STA应为高（HIGH），反之亦然
+        // B~G: 逐一比对 K1_1_STA/K1_2_STA/K2_1_STA/K2_2_STA/K3_1_STA/K3_2_STA
+        // H~J: 逐一比对 SW1_STA/SW2_STA/SW3_STA
+    }
+
+    /* ③ K~M类：过温检测，委托temperature模块 */
+    // Temperature_GetOverheatFlag(0/1/2) → Alarm_SetError/ClearError(K/L/M)
+
+    /* ④ O类：DC电源检测，直接读GPIO */
+    if (HAL_GPIO_ReadPin(DC_CTRL_GPIO_Port, DC_CTRL_Pin) == GPIO_PIN_RESET)
+        Alarm_SetError(ERROR_TYPE_O);
+    else
+        Alarm_ClearError(ERROR_TYPE_O);
+}
 ```
 
 #### **测试方法**
 ```c
-// 在main.c中测试
-void Test_Safety(void)
-{
-    Safety_Init();
-    
-    printf("\r\n========== Safety Monitor Test ==========\r\n");
-    
-    // 测试1：正常状态
-    printf("Test 1: Normal state\r\n");
-    Safety_Update();
-    Safety_PrintStatus();
-    HAL_Delay(1000);
-    
-    // 测试2：模拟使能冲突（通过人为触发）
-    printf("\nTest 2: Simulate enable conflict\r\n");
-    printf("Please trigger K1_EN and K2_EN simultaneously\r\n");
-    printf("Monitoring for 10 seconds...\r\n");
-    for(int i = 0; i < 10; i++) {
-        HAL_Delay(1000);
-        Safety_Update();
-        if(Alarm_HasError()) {
-            Safety_PrintStatus();
-        }
-    }
-    
-    printf("\nTest PASS\r\n");
-    printf("=========================================\r\n\r\n");
-}
+// 在main.c中集成测试（非阻塞方式，Safety_Update 由100ms任务调度）
+// 1. 上电后观察串口：无硬件异常时应无任何报警输出
+// 2. 手动拉低两路K_EN：串口应立即出现 [Alarm] Set error: A-Enable Conflict
+// 3. 恢复K_EN：串口应立即出现 [Alarm] Clear error: A-Enable Conflict
+// 4. 按下任意K_EN切换继电器：切换过渡期间（约500ms）B~J类不应产生报警
+// 5. 拉低DC_CTRL：串口应立即出现 [Alarm] Set error: O-Power Error
 ```
 
 #### **验收标准**
-- ✅ 15种异常检测逻辑正确
-- ✅ 真值表判断准确
-- ✅ 异常触发时报警正常
-- ✅ 异常解除条件正确
-- ✅ 与其他模块集成无冲突
+- ✅ 无硬件异常时，上电后无任何报警
+- ✅ A类冲突实时触发、实时消除（GPIO恢复后下一个100ms周期自动清除）
+- ✅ 继电器切换过渡期间（500ms脉冲期）B~J类无误报
+- ✅ 继电器稳定后，STA不匹配立即触发对应B~J类报警
+- ✅ 过温触发K/L/M类报警，降温后自动消除（含2°C迟滞）
+- ✅ DC_CTRL掉电触发O类报警，恢复后自动消除
+- ✅ N类由self_test主动调用接口控制，不干扰其他检测
 
 #### **依赖关系**
-- 依赖：`relay_control.h`、`temperature.h`、`alarm_output.h`、`common_def.h`
+- 依赖：`relay_control.h`（仅 `Relay_IsChannelBusy()`）、`temperature.h`、`alarm_output.h`、`common_def.h`
 
 ---
 

@@ -1,4 +1,4 @@
-/* USER CODE BEGIN Header */
+﻿/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
   * @file           : main.c
@@ -33,6 +33,7 @@
 #include "oled_display.h"
 #include "alarm_output.h"
 #include "relay_control.h"
+#include "safety_monitor.h"
 #include <stdlib.h>
 /* USER CODE END Includes */
 
@@ -235,28 +236,56 @@ int main(void)
   printf("  - Observe serial output and relay actions\r\n\r\n");
   printf("[Status Monitor Started - Change EN pins to test]\r\n\r\n");
 
+  // Phase 8: Safety Monitor Module
+  printf("\r\n========== Phase 8: Safety Monitor ==========\r\n");
+  Safety_Init();
+  printf("[Safety] Module ready, monitoring started\r\n\r\n");
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  uint32_t tick_20ms  = 0U;
+  uint32_t tick_50ms  = 0U;
+  uint32_t tick_100ms = 0U;
+  uint32_t tick_1s    = 0U;
+
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    
-    // Phase 7: External Interrupt Control Test
-    // Monitor EN pins and update relay states
-    
-    // Update relay FSM (handle ongoing pulses)
-    Relay_Update();
-    
-    // Update temperature and alarm modules
-    Temperature_Update();
-    Alarm_Update();
-    
-    // Delay to reduce serial output frequency
-    HAL_Delay(100);
+
+    uint32_t now = HAL_GetTick();
+
+    /* 20ms task: relay FSM update (500ms pulse timing) */
+    if ((now - tick_20ms) >= 20U)
+    {
+      tick_20ms = now;
+      Relay_Update();
+    }
+
+    /* 50ms task: alarm output drive (BEEP/ALARM pulse generation) */
+    if ((now - tick_50ms) >= 50U)
+    {
+      tick_50ms = now;
+      Alarm_Update();
+    }
+
+    /* 100ms task: safety monitor polling (error types A~O) */
+    if ((now - tick_100ms) >= 100U)
+    {
+      tick_100ms = now;
+      Safety_Update();
+    }
+
+    /* 1s task: temperature sampling, filtering, threshold check, fan RPM */
+    if ((now - tick_1s) >= 1000U)
+    {
+      tick_1s = now;
+      Temperature_Update();
+      Temperature_1sHandler();
+    }
   }
   /* USER CODE END 3 */
 }
