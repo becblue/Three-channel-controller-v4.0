@@ -34,6 +34,7 @@
 #include "alarm_output.h"
 #include "relay_control.h"
 #include "safety_monitor.h"
+#include "self_test.h"
 #include <stdlib.h>
 /* USER CODE END Includes */
 
@@ -241,14 +242,19 @@ int main(void)
   Safety_Init();
   printf("[Safety] Module ready, monitoring started\r\n\r\n");
 
+  // Phase 9: Self Test
+  printf("\r\n========== Phase 9: Self Test ==========\r\n");
+  SelfTest_Start();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  uint32_t tick_20ms  = 0U;
-  uint32_t tick_50ms  = 0U;
-  uint32_t tick_100ms = 0U;
-  uint32_t tick_1s    = 0U;
+  uint32_t tick_20ms    = 0U;
+  uint32_t tick_50ms    = 0U;
+  uint32_t tick_100ms   = 0U;
+  uint32_t tick_1s      = 0U;
+  uint32_t tick_selftest = 0U;
 
   while (1)
   {
@@ -258,33 +264,44 @@ int main(void)
 
     uint32_t now = HAL_GetTick();
 
-    /* 20ms task: relay FSM update (500ms pulse timing) */
+    /* 20ms task: relay FSM (always runs; self-test correction pulses depend on this) */
     if ((now - tick_20ms) >= 20U)
     {
       tick_20ms = now;
       Relay_Update();
     }
 
-    /* 50ms task: alarm output drive (BEEP/ALARM pulse generation) */
+    /* 50ms task: alarm output drive (always runs) */
     if ((now - tick_50ms) >= 50U)
     {
       tick_50ms = now;
       Alarm_Update();
     }
 
-    /* 100ms task: safety monitor polling (error types A~O) */
-    if ((now - tick_100ms) >= 100U)
+    if (SelfTest_IsRunning())
     {
-      tick_100ms = now;
-      Safety_Update();
+      /* During self-test: advance state machine every 20ms, pause safety/temp tasks */
+      if ((now - tick_selftest) >= 20U)
+      {
+        tick_selftest = now;
+        SelfTest_Update();
+      }
     }
-
-    /* 1s task: temperature sampling, filtering, threshold check, fan RPM */
-    if ((now - tick_1s) >= 1000U)
+    else
     {
-      tick_1s = now;
-      Temperature_Update();
-      Temperature_1sHandler();
+      /* Normal operation: safety monitor + temperature update */
+      if ((now - tick_100ms) >= 100U)
+      {
+        tick_100ms = now;
+        Safety_Update();
+      }
+
+      if ((now - tick_1s) >= 1000U)
+      {
+        tick_1s = now;
+        Temperature_Update();
+        Temperature_1sHandler();
+      }
     }
   }
   /* USER CODE END 3 */
