@@ -96,9 +96,10 @@ W25Q_Result_e W25Q_Read(uint32_t addr, uint8_t *buf, uint32_t len)
             return W25Q_ERROR;
         }
 
-        /* First 4 bytes of rx_frame are the cmd+addr overlap phase (ignored) */
+        /* W25Q outputs first data byte on same clock as 4th TX byte (low addr).
+         * So 16 data bytes are at rx_frame[3..18], not [4..19]. */
         for (i = 0U; i < chunk; i++) {
-            buf[offset + i] = rx_frame[4U + i];
+            buf[offset + i] = rx_frame[3U + i];
         }
 
         offset += chunk;
