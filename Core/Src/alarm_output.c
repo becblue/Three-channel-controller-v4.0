@@ -71,10 +71,8 @@ void Alarm_SetError(ErrorType_e error_type)
     }
     
     // 设置异常标志（位或操作）
+    if ((alarm_manager.error_flags & error_type) == 0U) { DataLogger_WriteAlarm(error_type, 1); }
     alarm_manager.error_flags |= error_type;
-
-    /* Log alarm set event to external Flash */
-    DataLogger_WriteAlarm(error_type, 1);
     
     // 更新蜂鸣器模�?
     alarm_update_beep_mode();
@@ -98,10 +96,8 @@ void Alarm_ClearError(ErrorType_e error_type)
     }
     
     // 清除异常标志（位与非操作�?
+    if ((alarm_manager.error_flags & error_type) != 0U) { DataLogger_WriteAlarm(error_type, 0); }
     alarm_manager.error_flags &= ~error_type;
-
-    /* Log alarm clear event to external Flash */
-    DataLogger_WriteAlarm(error_type, 0);
     
     // 更新蜂鸣器模�?
     alarm_update_beep_mode();
