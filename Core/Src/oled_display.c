@@ -484,7 +484,8 @@ void OLED_ShowMinyerLogo(void)
 
 /**
  * @brief Progress bar for self-test (row5~6, y=40~55). Does NOT clear whole screen.
- *        Only clears row5~6 then redraws bar + percentage.
+ *        Progress bar occupies page5 (y=40~47), percentage text occupies page6 (y=48~55).
+ *        The two elements are separated by 1 pixel gap to avoid overlap.
  */
 void OLED_ShowProgress(uint8_t percent)
 {
@@ -493,16 +494,16 @@ void OLED_ShowProgress(uint8_t percent)
     /* Clear progress area only (page 5~6) */
     memset(&oled_buffer[5U * OLED_WIDTH], 0U, (size_t)OLED_WIDTH * 2U);
 
-    /* Outer frame: x=10, y=41, w=108, h=10 */
-    OLED_DrawRect(10U, 41U, 108U, 10U, false);
+    /* 进度条外框完整在 page5 内: x=10, y=40, w=108, h=8 → y=40~47 */
+    OLED_DrawRect(10U, 40U, 108U, 8U, false);
 
-    /* Fill: inner area x=11, y=42, max_w=106 */
+    /* 填充区域: x=11, y=41, max_w=106, h=6 → y=41~46 */
     uint8_t fill = (uint8_t)((106U * (uint16_t)percent) / 100U);
     if (fill > 0U) {
-        OLED_DrawRect(11U, 42U, fill, 8U, true);
+        OLED_DrawRect(11U, 41U, fill, 6U, true);
     }
 
-    /* Percentage text, centered on row6 (y=48~55) */
+    /* 百分比文字独占 page6 (y=48~55)，与进度条之间有 1px 间隙（y=47 是框底，y=48 是文字顶） */
     char    str[8];
     snprintf(str, sizeof(str), "%d%%", percent);
     uint8_t tlen = (uint8_t)strlen(str);
