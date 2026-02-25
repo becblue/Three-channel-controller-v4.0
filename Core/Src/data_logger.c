@@ -57,6 +57,7 @@ static bool     save_meta(void);
 static bool     write_record(const LogRecord_t *rec);
 static void     check_pre_erase(void);
 static void     uart_print(const char *str);
+static void     format_record_text(const LogRecord_t *rec, char *out, uint16_t out_len);
 
 /* Exported functions --------------------------------------------------------*/
 
@@ -136,14 +137,16 @@ void DataLogger_WriteChannelAction(uint8_t ch, bool open)
 /**
   * @brief  Write an alarm event record (set or clear)
   */
-void DataLogger_WriteAlarm(uint8_t alarm_type, bool is_set)
+void DataLogger_WriteAlarm(uint16_t alarm_type, bool is_set)
 {
     LogRecord_t rec;
     if (!s_logger_ready) { return; }
     memset(&rec, 0, sizeof(rec));
     rec.timestamp = HAL_GetTick();
     rec.type      = is_set ? (uint8_t)LOG_TYPE_ALARM_SET : (uint8_t)LOG_TYPE_ALARM_CLR;
-    rec.param1    = alarm_type;
+    /* Store 16-bit alarm type across param1 (high byte) and param2 (low byte) */
+    rec.param1    = (uint8_t)((alarm_type >> 8U) & 0xFFU);
+    rec.param2    = (uint8_t)(alarm_type & 0xFFU);
     rec.crc8      = calc_crc8((uint8_t *)&rec, (uint8_t)(sizeof(rec) - 1U));
     write_record(&rec);
 }
@@ -293,11 +296,7 @@ void DataLogger_BackgroundTask(void)
             {
                 LogRecord_t rec;
                 memcpy(&rec, raw, sizeof(rec));
-                snprintf(line, sizeof(line),
-                         "[%10lu] T:0x%02X P1:0x%02X P2:0x%02X EX:0x%08lX\r\n",
-                         (unsigned long)rec.timestamp,
-                         rec.type, rec.param1, rec.param2,
-                         (unsigned long)rec.extra);
+                format_record_text(&rec, line, (uint16_t)sizeof(line));
                 uart_print(line);
             }
 
@@ -419,4 +418,77 @@ static void uart_print(const char *str)
     uint16_t len = (uint16_t)strlen(str);
     if (len == 0U) { return; }
     HAL_UART_Transmit(&huart3, (uint8_t *)str, len, UART_TX_TIMEOUT_MS);
+}
+
+/**
+  * @brief  Return human-readable alarm name for a 16-bit ErrorType_e value
+  */
+static const char *alarm_type_name(uint16_t t)
+{
+    switch (t) {
+        case 0x0001U: return "Enable conflict (A)";
+        case 0x0002U: return "K1_1 feedback error (B)";
+        case 0x0004U: return "K2_1 feedback error (C)";
+        case 0x0008U: return "K3_1 feedback error (D)";
+        case 0x0010U: return "K1_2 feedback error (E)";
+        case 0x0020U: return "K2_2 feedback error (F)";
+        case 0x0040U: return "K3_2 feedback error (G)";
+        case 0x0080U: return "SW1 feedback error (H)";
+        case 0x0100U: return "SW2 feedback error (I)";
+        case 0x0200U: return "SW3 feedback error (J)";
+        case 0x0400U: return "NTC1 overheat (K)";
+        case 0x0800U: return "NTC2 overheat (L)";
+        case 0x1000U: return "NTC3 overheat (M)";
+        case 0x2000U: return "Self-test error (N)";
+        case 0x4000U: return "DC power loss (O)";
+        default:      return "Unknown alarm";
+    }
+}
+
+/**
+  * @brief  Format one log record into a human-readable line
+  *         Example: "[   1250 ms] CH2 OPEN\r\n"
+  */
+static void format_record_text(const LogRecord_t *rec, char *out, uint16_t out_len)
+{
+    uint32_t ts_s  = rec->timestamp / 1000UL;
+    uint32_t ts_ms = rec->timestamp % 1000UL;
+    char event[56] = {0};
+
+    switch ((LogType_e)rec->type) {
+        case LOG_TYPE_BOOT:
+            snprintf(event, sizeof(event), "BOOT");
+            break;
+        case LOG_TYPE_SELF_TEST_OK:
+            snprintf(event, sizeof(event), "SELF-TEST PASS");
+            break;
+        case LOG_TYPE_SELF_TEST_NG:
+            snprintf(event, sizeof(event), "SELF-TEST FAIL (code=0x%02X)", rec->param1);
+            break;
+        case LOG_TYPE_CH_OPEN:
+            snprintf(event, sizeof(event), "CH%u OPEN", (unsigned)rec->param1);
+            break;
+        case LOG_TYPE_CH_CLOSE:
+            snprintf(event, sizeof(event), "CH%u CLOSE", (unsigned)rec->param1);
+            break;
+        case LOG_TYPE_ALARM_SET: {
+            uint16_t atype = (uint16_t)((uint16_t)rec->param1 << 8U) | (uint16_t)rec->param2;
+            snprintf(event, sizeof(event), "ALARM SET  : %s", alarm_type_name(atype));
+            break;
+        }
+        case LOG_TYPE_ALARM_CLR: {
+            uint16_t atype = (uint16_t)((uint16_t)rec->param1 << 8U) | (uint16_t)rec->param2;
+            snprintf(event, sizeof(event), "ALARM CLR  : %s", alarm_type_name(atype));
+            break;
+        }
+        case LOG_TYPE_FORMAT:
+            snprintf(event, sizeof(event), "FLASH FORMAT");
+            break;
+        default:
+            snprintf(event, sizeof(event), "UNKNOWN(0x%02X) P1=0x%02X P2=0x%02X",
+                     rec->type, rec->param1, rec->param2);
+            break;
+    }
+
+    snprintf(out, out_len, "[%4lu.%03lu s] %s\r\n", ts_s, ts_ms, event);
 }

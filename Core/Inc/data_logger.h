@@ -106,7 +106,7 @@ typedef struct {
 
 bool DataLogger_Init(void);
 void DataLogger_WriteChannelAction(uint8_t ch, bool open);
-void DataLogger_WriteAlarm(uint8_t alarm_type, bool is_set);
+void DataLogger_WriteAlarm(uint16_t alarm_type, bool is_set);
 void DataLogger_WriteBoot(void);
 void DataLogger_KeyScan(void);
 void DataLogger_BackgroundTask(void);

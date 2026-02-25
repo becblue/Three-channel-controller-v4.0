@@ -74,7 +74,7 @@ void Alarm_SetError(ErrorType_e error_type)
     alarm_manager.error_flags |= error_type;
 
     /* Log alarm set event to external Flash */
-    DataLogger_WriteAlarm((uint8_t)error_type, 1);
+    DataLogger_WriteAlarm(error_type, 1);
     
     // 更新蜂鸣器模�?
     alarm_update_beep_mode();
@@ -101,7 +101,7 @@ void Alarm_ClearError(ErrorType_e error_type)
     alarm_manager.error_flags &= ~error_type;
 
     /* Log alarm clear event to external Flash */
-    DataLogger_WriteAlarm((uint8_t)error_type, 0);
+    DataLogger_WriteAlarm(error_type, 0);
     
     // 更新蜂鸣器模�?
     alarm_update_beep_mode();
