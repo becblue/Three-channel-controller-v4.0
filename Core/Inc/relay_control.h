@@ -1,4 +1,4 @@
-﻿/* USER CODE BEGIN Header */
+/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
   * @file           : relay_control.h
@@ -187,6 +187,13 @@ bool Relay_CloseChannel(Channel_e channel);
  * @retval None
  */
 void Relay_CloseAll(void);
+
+/**
+ * @brief  上电复位专用：无视 is_active 标志，强制对三路全部发送 OFF 脉冲
+ * @note   用于自检 LOGO 阶段，确保磁保持继电器回到断开状态
+ * @retval None
+ */
+void Relay_ForceCloseAll(void);
 
 /**
  * @brief  鑾峰彇褰撳墠婵€娲婚€氶亾

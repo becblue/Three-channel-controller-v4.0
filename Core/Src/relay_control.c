@@ -245,6 +245,39 @@ void Relay_CloseAll(void)
 }
 
 /**
+ * @brief  上电复位：强制对三路全部发送 OFF 脉冲
+ * @note   与 Relay_CloseAll() 的区别：
+ *         - 不检查 is_active 标志，磁保持继电器上电后状态未知，全部强制关断
+ *         - 用于自检 LOGO 阶段（2000ms），脉冲 500ms 内完成
+ *         - 不影响 Step2 纠错逻辑，两者互补
+ */
+void Relay_ForceCloseAll(void)
+{
+    printf("[Relay] Force closing all channels (power-on reset)...\r\n");
+
+    for (uint8_t i = 0U; i < 3U; i++)
+    {
+        /* 若通道正忙（上一次脉冲未完成），跳过，避免引脚状态冲突 */
+        if (IS_RELAY_BUSY(&relay_manager.channels[i].relay1) ||
+            IS_RELAY_BUSY(&relay_manager.channels[i].relay2))
+        {
+            printf("[Relay] CH%d busy, skip force close\r\n", (int)(i + 1U));
+            continue;
+        }
+
+        /* 直接发送 OFF 脉冲，无视 is_active */
+        relay_start_pulse(&relay_manager.channels[i].relay1, false);
+        relay_start_pulse(&relay_manager.channels[i].relay2, false);
+        relay_manager.channels[i].is_active  = false;
+        relay_manager.channels[i].pending_op = RELAY_OP_NONE;
+
+        printf("[Relay] CH%d force OFF pulse sent\r\n", (int)(i + 1U));
+    }
+
+    relay_manager.active_channel = CHANNEL_NONE;
+}
+
+/**
  * @brief  获取当前激活通道
  */
 Channel_e Relay_GetActiveChannel(void)
@@ -323,13 +356,26 @@ void Relay_Update(void)
                         // State changed - this is a valid trigger
                         if (current_state == GPIO_PIN_RESET)
                         {
+                            /* EN 变低：外部正常使能，打开通道 */
                             relay_manager.channels[i].pending_op = RELAY_OP_OPEN;
-                            printf("[ISR] K%d_EN interrupt triggered, opening CH%d...\r\n", i+1, i+1);
+                            printf("[ISR] K%d_EN LOW -> opening CH%d\r\n", i+1, i+1);
                         }
                         else
                         {
-                            relay_manager.channels[i].pending_op = RELAY_OP_CLOSE;
-                            printf("[ISR] K%d_EN interrupt triggered, closing CH%d...\r\n", i+1, i+1);
+                            /* EN 变高：先判断 DC 电源是否存在
+                             *   DC_CTRL = LOW  → 外部主动拉低，电源正常，属于正常关断指令
+                             *   DC_CTRL = HIGH → 上拉拉高，外部信号消失，属于异常掉电
+                             *                    不操作继电器，O 类报警由 Safety_Update() 自动处理 */
+                            if (HAL_GPIO_ReadPin(DC_CTRL_GPIO_Port, DC_CTRL_Pin) == GPIO_PIN_RESET)
+                            {
+                                relay_manager.channels[i].pending_op = RELAY_OP_CLOSE;
+                                printf("[ISR] K%d_EN HIGH + DC OK -> closing CH%d\r\n", i+1, i+1);
+                            }
+                            else
+                            {
+                                /* 异常掉电：保持继电器当前状态，仅输出报警 */
+                                printf("[ISR] K%d_EN HIGH + DC FAIL -> power loss detected, CH%d unchanged\r\n", i+1, i+1);
+                            }
                         }
                         
                         // Update last state

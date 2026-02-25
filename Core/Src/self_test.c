@@ -2,26 +2,26 @@
 /**
   ******************************************************************************
   * @file           : self_test.c
-  * @brief          : 缁崵绮洪懛顏咁梾濡€虫健鐎圭偟骞�
+  * @brief          : 缂侇垵宕电划娲嚊椤忓拋姊炬俊顖椻偓铏仴閻庡湱鍋熼獮锟�
   * @author         : Three-channel Controller Team
   * @date           : 2026-02-12
   ******************************************************************************
   * @attention
   *
-  * 閼奉亝顥呭ù浣衡柤閺冭泛绨敍鍫濆彙缁撅拷 5.5 缁夋帪绱氶敍锟�
-  *   [0ms]     LOGO 閺勫墽銇� 2000ms
-  *   [2000ms]  Step1 閺堢喐婀滈悩鑸碘偓浣界槕閸掞拷 500ms閿涘牐绻樻惔锟� 0%閳拷25%閿涳拷
-  *   [2500ms]  Step2 缂佈呮暩閸ｃ劎绫傞柨锟� 800ms閿涘牐绻樻惔锟� 25%閳拷50%閿涘苯鎯� 500ms 閼村鍟跨粵澶婄窡閿涳拷
-  *   [3300ms]  Step3 閹恒儴袝閸ｃ劍顥呴弻锟� 500ms閿涘牐绻樻惔锟� 50%閳拷75%閿涳拷
-  *   [3800ms]  Step4 濞撯晛瀹冲Λ鈧ù锟� 700ms閿涘牐绻樻惔锟� 75%閳拷100%閿涳拷
-  *   [4500ms]  缂佹挻鐏夐弰鍓с仛 PASS/FAIL 1500ms閿涘瞼绮ㄩ弶锟�
+  * 闁煎浜濋ˉ鍛规担琛℃煠闁哄啳娉涚花顓㈡晬閸繂褰欑紒鎾呮嫹 5.5 缂佸甯槐姘舵晬閿燂拷
+  *   [0ms]     LOGO 闁哄嫬澧介妵锟� 2000ms
+  *   [2000ms]  Step1 闁哄牏鍠愬﹢婊堟偐閼哥鍋撴担鐣屾闁告帪鎷� 500ms闁挎稑鐗愮换妯绘償閿燂拷 0%闁愁偓鎷�25%闁挎冻鎷�
+  *   [2500ms]  Step2 缂備綀鍛毄闁革絻鍔庣猾鍌炴煥閿燂拷 800ms闁挎稑鐗愮换妯绘償閿燂拷 25%闁愁偓鎷�50%闁挎稑鑻幆锟� 500ms 闁兼潙顦崯璺ㄧ驳婢跺﹦绐￠柨娑虫嫹
+  *   [3300ms]  Step3 闁规亽鍎磋闁革絻鍔嶉ˉ鍛村蓟閿燂拷 500ms闁挎稑鐗愮换妯绘償閿燂拷 50%闁愁偓鎷�75%闁挎冻鎷�
+  *   [3800ms]  Step4 婵炴挴鏅涚€瑰啿螞閳ь剙霉閿燂拷 700ms闁挎稑鐗愮换妯绘償閿燂拷 75%闁愁偓鎷�100%闁挎冻鎷�
+  *   [4500ms]  缂備焦鎸婚悘澶愬及閸撗佷粵 PASS/FAIL 1500ms闁挎稑鐬肩划銊╁级閿燂拷
   *
-  * 閸忔娊鏁拋鎹愵吀閸樼喎鍨敍锟�
-  *   1. SelfTest_Update() 娴犲懏甯规潻娑滃殰濡偓閻樿埖鈧焦婧€閿涘奔绗夌拫鍐暏 Relay_Update()閵嗭拷
-  *      Relay_Update() 閻㈠彉瀵屽顏嗗箚 20ms 娴犺濮熼幐浣虹敾妞瑰崬濮╅敍宀€鈥樻穱锟� Step2 缁剧娀鏁婇懘澶婂暱濮濓絽鐖堕幍褑顢戦妴锟�
-  *   2. Step2 閸︺劏绻橀崗銉︽缁斿宓嗛崣鎴ｆ崳缁剧娀鏁婇懘澶婂暱閿涘苯婀� 800ms 鐡掑懏妞傞崥搴ㄧ崣鐠囷拷 STA 缂佹挻鐏夐妴锟�
-  *   3. 濮ｅ繑顒炲Λ鈧ù瀣З娴ｆ粓鈧俺绻� step_action_done 閺嶅洤绻旀穱婵婄槈閸欘亝澧界悰灞肩濞喡扳偓锟�
-  *   4. OLED 鏉╂稑瀹抽弶鈥茬矌閸︺劎娅ㄩ崚鍡樼槷閸欐ê瀵查弮璺哄煕閺傚府绱濋柆鍨帳闂傤亞鍎婇妴锟�
+  * 闁稿繑濞婇弫顓犳媼閹规劦鍚€闁告ḿ鍠庨崹顖炴晬閿燂拷
+  *   1. SelfTest_Update() 濞寸姴鎳忕敮瑙勬交濞戞粌娈版俊顐熷亾闁绘ǹ鍩栭埀顑跨劍濠р偓闁挎稑濂旂粭澶屾嫬閸愵亝鏆� Relay_Update()闁靛棴鎷�
+  *      Relay_Update() 闁汇垹褰夌€靛苯顕ラ鍡楃畾 20ms 濞寸姾顕ф慨鐔煎箰娴ｈ櫣鏁惧鐟板船婵晠鏁嶅畝鈧垾妯荤┍閿燂拷 Step2 缂佸墽濞€閺佸﹪鎳樻径濠傛毐婵繐绲介悥鍫曞箥瑜戦、鎴﹀Υ閿燂拷
+  *   2. Step2 闁革负鍔忕换姗€宕楅妷锔筋槯缂佹柨顑呭畵鍡涘矗閹达絾宕崇紒鍓у█閺佸﹪鎳樻径濠傛毐闁挎稑鑻﹢锟� 800ms 閻℃帒鎳忓鍌炲触鎼淬劎宕ｉ悹鍥锋嫹 STA 缂備焦鎸婚悘澶愬Υ閿燂拷
+  *   3. 婵絽绻戦鐐参涢埀顒€霉鐎ｎ亜袟濞达絾绮撻埀顒佷亢缁伙拷 step_action_done 闁哄秴娲ょ换鏃€绌卞┑濠勬闁告瑯浜濇晶鐣屾偘鐏炶偐顏辨繛鍠℃壋鍋撻敓锟�
+  *   4. OLED 閺夆晜绋戠€规娊寮堕垾鑼煂闁革负鍔庡▍銊╁礆閸℃ḿ妲烽柛娆惷€垫煡寮捄鍝勭厱闁哄倸搴滅槐婵嬫焼閸喖甯抽梻鍌や簽閸庡﹪濡撮敓锟�
   *
   ******************************************************************************
   */
@@ -35,18 +35,19 @@
 #include "safety_monitor.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 
 /* Private defines -----------------------------------------------------------*/
 
-/* 閸氬嫰妯佸▓鍨瘮缂侇厽妞傞梻杈剧礄ms閿涳拷 */
-#define ST_LOGO_MS          TIME_LOGO_DISPLAY   ///< LOGO 閺勫墽銇氶弮鍫曟毐閿涳拷2000ms
-#define ST_STEP1_MS         500U                ///< Step1 閹镐胶鐢婚弮鍫曟毐
-#define ST_STEP2_MS         800U                ///< Step2 閹镐胶鐢婚弮鍫曟毐閿涳拷500ms閼村鍟� + 300ms缁嬪啿鐣鹃敍锟�
-#define ST_STEP3_MS         500U                ///< Step3 閹镐胶鐢婚弮鍫曟毐
-#define ST_STEP4_MS         700U                ///< Step4 閹镐胶鐢婚弮鍫曟毐
-#define ST_RESULT_MS        1500U               ///< PASS/FAIL 缂佹挻鐏夐崑婊呮殌閺冨爼鏆�
+/* 闁告艾瀚板Ο浣糕枔閸偄鐦紓渚囧幗濡炲倿姊绘潏鍓хms闁挎冻鎷� */
+#define ST_LOGO_MS          TIME_LOGO_DISPLAY   ///< LOGO 闁哄嫬澧介妵姘跺籍閸洘姣愰柨娑虫嫹2000ms
+#define ST_STEP1_MS         500U                ///< Step1 闁归晲鑳堕悽濠氬籍閸洘姣�
+#define ST_STEP2_MS         800U                ///< Step2 闁归晲鑳堕悽濠氬籍閸洘姣愰柨娑虫嫹500ms闁兼潙顦崯锟� + 300ms缂佸鍟块悾楣冩晬閿燂拷
+#define ST_STEP3_MS         500U                ///< Step3 闁归晲鑳堕悽濠氬籍閸洘姣�
+#define ST_STEP4_MS         700U                ///< Step4 闁归晲鑳堕悽濠氬籍閸洘姣�
+#define ST_RESULT_MS        1500U               ///< PASS/FAIL 缂備焦鎸婚悘澶愬磻濠婂懏娈岄柡鍐ㄧ埣閺嗭拷
 
-/* 鏉╂稑瀹抽弶鈥虫倗濮濄儵顎冪挧宄邦潗閸╁搫鍣敍鍫濆礋娴ｅ稄绱�%閿涘苯鍙� 100%閿涳拷 */
+/* 閺夆晜绋戠€规娊寮堕垾铏€楁慨婵勫劦椤庡啰鎸у畡閭︽綏闁糕晛鎼崳顖炴晬閸繂绀嬪ù锝呯▌缁憋拷%闁挎稑鑻崣锟� 100%闁挎冻鎷� */
 #define PROG_STEP1_BASE     0U
 #define PROG_STEP2_BASE     25U
 #define PROG_STEP3_BASE     50U
@@ -55,18 +56,18 @@
 /* Private types -------------------------------------------------------------*/
 
 /**
- * @brief 閼奉亝顥呮稉濠佺瑓閺傚浄绱欓張鈧亸蹇撳敶闁劎濮搁幀渚婄礆
+ * @brief 闁煎浜濋ˉ鍛▔婵犱胶鐟撻柡鍌氭祫缁辨瑩寮甸埀顒備焊韫囨挸鏁堕梺顔哄妿婵悂骞€娓氬﹦绀�
  */
 typedef struct
 {
-    SelfTest_State_e state;             ///< 瑜版挸澧犻懛顏咁梾閻樿埖鈧拷
-    uint32_t         step_start_ms;     ///< 瑜版挸澧犻悩鑸碘偓浣界箻閸忋儲妞傞惃鍕闂傚瓨鍩�
-    bool             step_action_done;  ///< 瑜版挸澧犲銉╊€冩稉鏄忣洣閸斻劋缍旈弰顖氭儊瀹稿弶澧界悰锟�
-    bool             step_pass[4];      ///< Step1~4 閸氬嫭顒炵紒鎾寸亯閿涘牅绗呴弽锟� 0~3閿涳拷
-    uint8_t          expected_open_ch;  ///< Step1 鐠囧棗鍩嗛崙铏规畱閺堢喐婀滈幍鎾崇磻闁岸浜鹃敍锟�0=閺冪媴绱�1~3閿涳拷
-    uint8_t          last_progress;     ///< 娑撳﹥顐� OLED 閺勫墽銇氭潻娑樺閿涘牓妲婚柌宥咁槻閸掗攱鏌婇敍锟�0xFF=瀵搫鍩楅崚閿嬫煀閿涳拷
-    bool             initialized;       ///< 濡€虫健閺勵垰鎯佸鎻掓儙閸旓拷
-    bool             passed;            ///< 閺堚偓缂佸牏绮ㄩ弸锟�
+    SelfTest_State_e state;             ///< 鐟滅増鎸告晶鐘绘嚊椤忓拋姊鹃柣妯垮煐閳ь剨鎷�
+    uint32_t         step_start_ms;     ///< 鐟滅増鎸告晶鐘绘偐閼哥鍋撴担鐣岀闁稿繈鍎插鍌炴儍閸曨剚顦ч梻鍌氱摠閸╋拷
+    bool             step_action_done;  ///< 鐟滅増鎸告晶鐘差潰閵夆晩鈧啯绋夐弰蹇ｆ矗闁告柣鍔嬬紞鏃堝及椤栨碍鍎婄€圭ǹ寮舵晶鐣屾偘閿燂拷
+    bool             step_pass[4];      ///< Step1~4 闁告艾瀚鐐电磼閹惧浜柨娑樼墔缁楀懘寮介敓锟� 0~3闁挎冻鎷�
+    uint8_t          expected_open_ch;  ///< Step1 閻犲洤妫楅崺鍡涘礄閾忚鐣遍柡鍫㈠枑濠€婊堝箥閹惧磭纾婚梺顐ｅ哺娴滈箖鏁嶉敓锟�0=闁哄啰濯寸槐锟�1~3闁挎冻鎷�
+    uint8_t          last_progress;     ///< 濞戞挸锕ラ锟� OLED 闁哄嫬澧介妵姘交濞戞ê顔婇柨娑樼墦濡插鏌屽鍜佹Щ闁告帡鏀遍弻濠囨晬閿燂拷0xFF=鐎殿喖鎼崺妤呭礆闁垮鐓€闁挎冻鎷�
+    bool             initialized;       ///< 婵☆垪鈧櫕鍋ラ柡鍕靛灠閹礁顔忛幓鎺撳剻闁告棑鎷�
+    bool             passed;            ///< 闁哄牃鍋撶紓浣哥墢缁劑寮搁敓锟�
 } SelfTest_Ctx_t;
 
 /* Private variables ---------------------------------------------------------*/
@@ -74,17 +75,17 @@ typedef struct
 static SelfTest_Ctx_t s_ctx;
 
 /**
- * @brief 娑撳鈧岸浜惧鏇″壖閺屻儲澹樼悰顭掔礄閹稿鈧岸浜剧槐銏犵穿 0~2閿涳拷
+ * @brief 濞戞挸顦甸埀顒佸哺娴滄儳顕ｉ弴鈥冲闁哄被鍎叉竟妯兼偘椤帞绀勯柟绋款樀閳ь剚宀告禍鍓ф閵忕姷绌� 0~2闁挎冻鎷�
  */
 static const struct
 {
-    GPIO_TypeDef *en_port;        ///< K_EN 缁旑垰褰�
-    uint16_t      en_pin;         ///< K_EN 瀵洝鍓�
-    GPIO_TypeDef *k1_sta_port;    ///< K_1_STA 缁旑垰褰�
-    uint16_t      k1_sta_pin;     ///< K_1_STA 瀵洝鍓�
-    GPIO_TypeDef *sw_sta_port;    ///< SW_STA 缁旑垰褰�
-    uint16_t      sw_sta_pin;     ///< SW_STA 瀵洝鍓�
-    Channel_e     channel;        ///< 闁岸浜鹃弸姘閸婏拷
+    GPIO_TypeDef *en_port;        ///< K_EN 缂佹棏鍨拌ぐ锟�
+    uint16_t      en_pin;         ///< K_EN 鐎殿喗娲濋崜锟�
+    GPIO_TypeDef *k1_sta_port;    ///< K_1_STA 缂佹棏鍨拌ぐ锟�
+    uint16_t      k1_sta_pin;     ///< K_1_STA 鐎殿喗娲濋崜锟�
+    GPIO_TypeDef *sw_sta_port;    ///< SW_STA 缂佹棏鍨拌ぐ锟�
+    uint16_t      sw_sta_pin;     ///< SW_STA 鐎殿喗娲濋崜锟�
+    Channel_e     channel;        ///< 闂侇偅宀告禍楣冨几濮橆偄顩柛濠忔嫹
 } s_ch_map[3] =
 {
     { K1_EN_GPIO_Port, K1_EN_Pin, K1_1_STA_GPIO_Port, K1_1_STA_Pin, SW1_STA_GPIO_Port, SW1_STA_Pin, CHANNEL_1 },
@@ -105,19 +106,19 @@ static void    st_update_oled_progress(SelfTest_State_e state, uint32_t elapsed_
 /* Public functions ----------------------------------------------------------*/
 
 /**
- * @brief  閸氼垰濮╃化鑽ょ埠閼奉亝顥�
+ * @brief  闁告凹鍨版慨鈺冨寲閼姐倗鍩犻柤濂変簼椤ワ拷
  */
 void SelfTest_Start(void)
 {
     memset(&s_ctx, 0, sizeof(s_ctx));
-    s_ctx.last_progress = 0xFFU; /* 瀵搫鍩楃粭顑跨濞喡ょ箻鎼达附娼崚閿嬫煀 */
+    s_ctx.last_progress = 0xFFU; /* 鐎殿喖鎼崺妤冪箔椤戣法顏辨繛鍠°倗绠婚幖杈鹃檮濞碱垶宕氶柨瀣厐 */
     s_ctx.initialized   = true;
     printf("[SelfTest] Starting self-test sequence...\r\n");
     st_enter_state(SELF_TEST_LOGO);
 }
 
 /**
- * @brief  閺屻儴顕楅懛顏咁梾閺勵垰鎯佹禒宥呮躬鏉╂劘顢�
+ * @brief  闁哄被鍎撮妤呮嚊椤忓拋姊鹃柡鍕靛灠閹焦绂掑鍛含閺夆晜鍔橀、锟�
  */
 uint8_t SelfTest_IsRunning(void)
 {
@@ -125,12 +126,12 @@ uint8_t SelfTest_IsRunning(void)
     {
         return 0U;
     }
-    /* IDLE / PASS閿涘牏绮ㄩ弶鐔锋倵閿涳拷/ FAIL閿涘牏绮ㄩ弶鐔锋倵閿涘娼庣憴鍡曡礋娑撳秴婀潻鎰攽 */
+    /* IDLE / PASS闁挎稑鐗忕划銊╁级閻旈攱鍊甸柨娑虫嫹/ FAIL闁挎稑鐗忕划銊╁级閻旈攱鍊甸柨娑橆槸濞煎海鎲撮崱鏇＄濞戞挸绉村﹢顏呮交閹邦垼鏀� */
     return (s_ctx.state != SELF_TEST_IDLE) ? 1U : 0U;
 }
 
 /**
- * @brief  閺屻儴顕楅懛顏咁梾閺勵垰鎯侀柅姘崇箖
+ * @brief  闁哄被鍎撮妤呮嚊椤忓拋姊鹃柡鍕靛灠閹線鏌呭宕囩畺
  */
 uint8_t SelfTest_IsPassed(void)
 {
@@ -138,7 +139,7 @@ uint8_t SelfTest_IsPassed(void)
 }
 
 /**
- * @brief  閼奉亝顥呴悩鑸碘偓浣规簚閺囧瓨鏌婇敍鍫ユ姜闂冭顢ｉ敍灞剧槨 20ms 鐠嬪啰鏁ら敍锟�
+ * @brief  闁煎浜濋ˉ鍛存偐閼哥鍋撴担瑙勭皻闁哄洤鐡ㄩ弻濠囨晬閸儲濮滈梻鍐嚙椤綁鏁嶇仦鍓фЖ 20ms 閻犲鍟伴弫銈夋晬閿燂拷
  */
 void SelfTest_Update(void)
 {
@@ -179,13 +180,13 @@ void SelfTest_Update(void)
             st_update_oled_progress(s_ctx.state, elapsed);
             if (!s_ctx.step_action_done)
             {
-                /* 鏉╂稑鍙� Step2 缁斿宓嗛崣鎴ｆ崳缁剧娀鏁婇懘澶婂暱閿涘牏鏁辨稉璇叉儕閻滐拷 Relay_Update 閹笛嗩攽閿涳拷 */
+                /* 閺夆晜绋戦崣锟� Step2 缂佹柨顑呭畵鍡涘矗閹达絾宕崇紒鍓у█閺佸﹪鎳樻径濠傛毐闁挎稑鐗忛弫杈ㄧ▔鐠囧弶鍎曢柣婊愭嫹 Relay_Update 闁圭瑳鍡╂斀闁挎冻鎷� */
                 s_ctx.step_action_done = true;
                 st_exec_step2();
             }
             if (elapsed >= ST_STEP2_MS)
             {
-                /* 閼村鍟挎惔鏂垮嚒鐎瑰本鍨氶敍锟�500ms閿涘绱濋崘宥囩搼 300ms 閸氬酣鐛欑拠锟� STA */
+                /* 闁兼潙顦崯鎸庢償閺傚灝鍤掗悗鐟版湰閸ㄦ岸鏁嶉敓锟�500ms闁挎稑顧€缁辨繈宕樺鍥╂惣 300ms 闁告艾閰ｉ悰娆戞嫚閿燂拷 STA */
                 s_ctx.step_pass[1] = st_verify_step2();
                 st_enter_state(SELF_TEST_STEP3_SWITCH_CHECK);
             }
@@ -228,7 +229,7 @@ void SelfTest_Update(void)
                 s_ctx.step_action_done = true;
                 s_ctx.passed           = true;
                 Safety_ClearSelfTestError();
-                /* OLED 閺勫墽銇� PASS */
+                /* OLED 闁哄嫬澧介妵锟� PASS */
                 OLED_Clear();
                 OLED_ShowString(28U, 0U, "SELF-TEST", OLED_FONT_8X16);
                 OLED_ShowString(48U, 4U, "PASS",      OLED_FONT_8X16);
@@ -249,7 +250,7 @@ void SelfTest_Update(void)
                 s_ctx.step_action_done = true;
                 s_ctx.passed           = false;
                 Safety_SetSelfTestError();
-                /* OLED 閺勫墽銇� FAIL */
+                /* OLED 闁哄嫬澧介妵锟� FAIL */
                 OLED_Clear();
                 OLED_ShowString(28U, 0U, "SELF-TEST", OLED_FONT_8X16);
                 OLED_ShowString(48U, 4U, "FAIL",      OLED_FONT_8X16);
@@ -269,7 +270,7 @@ void SelfTest_Update(void)
 }
 
 /**
- * @brief  閹垫挸宓冮懛顏咁梾閸氬嫭顒炴銈囩波閺嬫粣绱欑拫鍐槸閻㈩煉绱�
+ * @brief  闁瑰灚鎸稿畵鍐嚊椤忓拋姊鹃柛姘椤掔偞顨ラ妶鍥╂尝闁哄绮ｇ槐娆戞嫬閸愵厾妲搁柣銏╃厜缁憋拷
  */
 void SelfTest_PrintResult(void)
 {
@@ -283,7 +284,7 @@ void SelfTest_PrintResult(void)
 /* Private functions ---------------------------------------------------------*/
 
 /**
- * @brief  閸掑洦宕查崚鐗堟煀閻樿埖鈧緤绱濋柌宥囩枂鐠佲剝妞傞崳銊ユ嫲閸斻劋缍旈弽鍥х箶閿涘苯鑻熼弴瀛樻煀 OLED 閻ｅ矂娼�
+ * @brief  闁告帒娲﹀畷鏌ュ礆閻楀牊鐓€闁绘ǹ鍩栭埀顑跨筏缁辨繈鏌屽鍥╂瀭閻犱讲鍓濆鍌炲闯閵娿儲瀚查柛鏂诲妺缂嶆棃寮介崶褏绠堕柨娑樿嫰閼荤喖寮寸€涙ɑ鐓€ OLED 闁伙絽鐭傚ḿ锟�
  */
 static void st_enter_state(SelfTest_State_e new_state)
 {
@@ -294,18 +295,24 @@ static void st_enter_state(SelfTest_State_e new_state)
     switch (new_state)
     {
         case SELF_TEST_LOGO:
-            /* OLED_ShowLogo() 閸愬懘鍎村鎻掑瘶閸氾拷 OLED_Clear() 閸滐拷 OLED_Refresh() */
+            /* OLED_ShowLogo() 闁告劕鎳橀崕鏉戭啅閹绘帒鐦堕柛姘炬嫹 OLED_Clear() 闁告粣鎷� OLED_Refresh() */
+            /* 显示 LOGO 同时发起三路强制关闭脉冲：
+             * 磁保持继电器上电状态未知，需在 Step1 前确保全部断开。
+             * OFF 脉冲 500ms，LOGO 停留 2000ms，关闭在 LOGO 期间完成。
+             * Step2 纠错逻辑保留，两者互补。 */
             OLED_ShowLogo();
-            printf("[SelfTest] Showing LOGO (%ums)...\r\n", (unsigned int)ST_LOGO_MS);
+            Relay_ForceCloseAll();
+            printf("[SelfTest] Showing LOGO (%ums), force-closing all channels...\r\n",
+                   (unsigned int)ST_LOGO_MS);
             break;
 
         case SELF_TEST_STEP1_STATE_IDENTIFY:
             /*
-             * 閻ｅ矂娼�2鐢啫鐪敍锟�
-             *   row0 (y=0~7) : 閺嶅洭顣� "Self Testing..."
-             *   row1~4(y=8~39): minyerLOGO閿涘牆鐪虫稉顓ㄧ礆
-             *   row5~6(y=40~55): 鏉╂稑瀹抽弶锟� + 閻ф儳鍨庡В锟�
-             *   row7 (y=56~63): 濮濄儵顎冮崥锟�
+             * 闁伙絽鐭傚ḿ锟�2閻㈩垰鍟惇顒勬晬閿燂拷
+             *   row0 (y=0~7) : 闁哄秴娲。锟� "Self Testing..."
+             *   row1~4(y=8~39): minyerLOGO闁挎稑鐗嗛惇铏▔椤撱劎绀�
+             *   row5~6(y=40~55): 閺夆晜绋戠€规娊寮堕敓锟� + 闁谎勫劤閸ㄥ骸袙閿燂拷
+             *   row7 (y=56~63): 婵縿鍎甸鍐触閿燂拷
              */
             OLED_Clear();
             OLED_ShowString(0U, 0U, "Self Testing...", OLED_FONT_6X8);
@@ -318,7 +325,7 @@ static void st_enter_state(SelfTest_State_e new_state)
             break;
 
         case SELF_TEST_STEP2_RELAY_CHECK:
-            /* 閸欘亜鍩涢弬锟� row7閿涘牊顒炴銈呮倳閿涘鎷版潻娑樺閸栫尨绱濋弽鍥暯娑擄拷 LOGO 娣囨繄鏆€ */
+            /* 闁告瑯浜滈崺娑㈠棘閿燂拷 row7闁挎稑鐗婇鐐搭殽閵堝懏鍊抽柨娑橆槸閹风増娼诲☉妯侯唺闁告牜灏ㄧ槐婵嬪冀閸ヮ剦鏆☉鎿勬嫹 LOGO 濞ｅ洦绻勯弳鈧� */
             OLED_ShowString(4U, 7U, "Step2:Relay Check", OLED_FONT_6X8);
             OLED_ShowProgress(PROG_STEP2_BASE);
             OLED_Refresh();
@@ -348,7 +355,7 @@ static void st_enter_state(SelfTest_State_e new_state)
 }
 
 /**
- * @brief  閺嶈宓佽ぐ鎾冲閻樿埖鈧礁鎷板鑼垛偓妤佹閿涘矁顓哥粻妤勭箻鎼达妇娅ㄩ崚鍡樼槷閿涳拷0~100閿涳拷
+ * @brief  闁哄秷顫夊畵浣姐亹閹惧啿顤呴柣妯垮煐閳ь兛绀侀幏鏉款啅閼煎灈鍋撳Δ浣诡槯闁挎稑鐭侀鍝ョ不濡ゅ嫮绠婚幖杈惧濞呫劑宕氶崱妯兼Х闁挎冻鎷�0~100闁挎冻鎷�
  */
 static uint8_t st_calc_progress(SelfTest_State_e state, uint32_t elapsed_ms)
 {
@@ -372,7 +379,7 @@ static uint8_t st_calc_progress(SelfTest_State_e state, uint32_t elapsed_ms)
 }
 
 /**
- * @brief  閼汇儴绻樻惔锔炬閸掑棙鐦張澶婂綁閸栨牕鍨崚閿嬫煀 OLED 鏉╂稑瀹抽弶鈽呯礄闂冨弶顒涙０鎴犵畳閸忋劌鐫嗛崚閿嬫煀閿涳拷
+ * @brief  闁兼眹鍎寸换妯绘償閿旂偓顏ラ柛鎺戞閻︻噣寮垫径濠傜秮闁告牗鐗曢崹顖炲礆闁垮鐓€ OLED 閺夆晜绋戠€规娊寮堕埥鍛闂傚啫寮堕娑欙紣閹寸姷鐣抽柛蹇嬪妼閻棝宕氶柨瀣厐闁挎冻鎷�
  */
 static void st_update_oled_progress(SelfTest_State_e state, uint32_t elapsed_ms)
 {
@@ -387,10 +394,10 @@ static void st_update_oled_progress(SelfTest_State_e state, uint32_t elapsed_ms)
 }
 
 /**
- * @brief  Step1閿涙俺顕伴崣鏍︾瑏鐠猴拷 K_EN 鐠囧棗鍩嗛張鐔告箿閹垫挸绱戦柅姘朵壕閿涘本顥呭ù瀣╁▏閼宠棄鍟跨粣锟�
+ * @brief  Step1闁挎稒淇洪浼村矗閺嶏妇鐟忛悹鐚存嫹 K_EN 閻犲洤妫楅崺鍡涘嫉閻斿憡绠块柟鍨尭缁辨垿鏌呭鏈靛闁挎稑鏈ˉ鍛圭€ｂ晛鈻忛柤瀹犳閸熻法绮ｉ敓锟�
  *
- * 鐟欏嫬鍨敍娆縚EN = LOW 閳拷 闁岸浜鹃張鐔告箿閹垫挸绱戦敍鍫㈡埛閻㈤潧娅掗崥绋挎値閿涘TA HIGH閿涳拷
- *       K_EN = HIGH 閳拷 闁岸浜鹃張鐔告箿閸忔娊妫撮敍鍫㈡埛閻㈤潧娅掗弬顓炵磻閿涘TA LOW閿涳拷
+ * 閻熸瑥瀚崹顖炴晬濞嗙笟EN = LOW 闁愁偓鎷� 闂侇偅宀告禍楣冨嫉閻斿憡绠块柟鍨尭缁辨垿鏁嶉崼銏″煕闁汇垽娼у▍鎺楀触缁嬫寧鍊ら柨娑橆劔TA HIGH闁挎冻鎷�
+ *       K_EN = HIGH 闁愁偓鎷� 闂侇偅宀告禍楣冨嫉閻斿憡绠块柛蹇斿▕濡挳鏁嶉崼銏″煕闁汇垽娼у▍鎺楀棘椤撶偟纾婚柨娑橆劔TA LOW闁挎冻鎷�
  */
 static void st_exec_step1(void)
 {
@@ -402,13 +409,13 @@ static void st_exec_step1(void)
         if (HAL_GPIO_ReadPin(s_ch_map[i].en_port, s_ch_map[i].en_pin) == GPIO_PIN_RESET)
         {
             low_cnt++;
-            s_ctx.expected_open_ch = (uint8_t)(i + 1U); /* 閺嗗倽顔囬敍宀冨 >1 閸掓瑦妫ら弫锟� */
+            s_ctx.expected_open_ch = (uint8_t)(i + 1U); /* 闁哄棗鍊介鍥晬瀹€鍐仧 >1 闁告帗鐟﹀Λ銈夊极閿燂拷 */
         }
     }
 
     if (low_cnt > 1U)
     {
-        /* 婢舵俺鐭鹃崥灞炬娴ｈ儻鍏橀敍姘▏閼宠棄鍟跨粣锟� */
+        /* 濠㈣埖淇洪惌楣冨触鐏炵偓顦уù锝堝劵閸忔﹢鏁嶅顐⑩枏闁煎疇妫勯崯璺ㄧ玻閿燂拷 */
         s_ctx.step_pass[0]     = false;
         s_ctx.expected_open_ch = 0U;
         printf("[SelfTest] Step1 FAIL: Enable conflict (%d channels enabled)\r\n",
@@ -423,22 +430,22 @@ static void st_exec_step1(void)
 }
 
 /**
- * @brief  Step2閿涙岸鎷＄€碉拷 STA 娑撳孩婀￠張娑楃瑝缁楋妇娈戦柅姘朵壕閸欐垼鎹ｇ痪鐘绘晩閼村鍟�
+ * @brief  Step2闁挎稒宀搁幏锛勨偓纰夋嫹 STA 濞戞挸瀛╁﹢锟犲嫉濞戞鐟濈紒妤嬪濞堟垿鏌呭鏈靛闁告瑦鍨奸幑锝囩棯閻樼粯鏅╅柤鏉戭槸閸燂拷
  *
- * 缁涙牜鏆愰敍姘帥婢跺嫮鎮婇幍鈧張锟�"鎼存柨鍙ч梻锟�"闁岸浜鹃敍鍦lay_CloseChannel閿涘奔绱扮粩瀣祮闁插﹥鏂佹禍鎺楁敚閿涘绱�
- *       閸愬秴顦╅悶锟�"鎼存梹澧﹀鈧�"闁岸浜鹃敍鍫熸付婢舵矮绔存稉顏庣礉娴滄帡鏀ｅ銈嗘瀹歌尪袙闂勩倧绱氶妴锟�
- * 妤犲矁鐦夐敍姘辨暠 st_verify_step2() 閸︼拷 ST_STEP2_MS 鐡掑懏妞傞崥搴ょ殶閻€劊鈧拷
+ * 缂佹稒鐗滈弳鎰版晬濮橆剙甯ュ璺哄閹﹪骞嶉埀顒勫嫉閿燂拷"閹煎瓨鏌ㄩ崣褔姊婚敓锟�"闂侇偅宀告禍楣冩晬閸︻湯lay_CloseChannel闁挎稑濂旂槐鎵博鐎ｎ亜绁梺鎻掞攻閺備焦绂嶉幒妤佹暁闁挎稑顧€缁憋拷
+ *       闁告劕绉撮ˇ鈺呮偠閿燂拷"閹煎瓨姊规晶锕€顕ｉ埀锟�"闂侇偅宀告禍楣冩晬閸喐浠樺鑸电煯缁斿瓨绋夐搴ｇ濞存粍甯￠弨锝咁潰閵堝棙顦х€规瓕灏闂傚嫨鍊х槐姘跺Υ閿燂拷
+ * 濡ょ姴鐭侀惁澶愭晬濮樿鲸鏆� st_verify_step2() 闁革讣鎷� ST_STEP2_MS 閻℃帒鎳忓鍌炲触鎼淬倗娈堕柣鈧妸閳ь剨鎷�
  */
 static void st_exec_step2(void)
 {
     if (!s_ctx.step_pass[0])
     {
-        /* Step1 婢惰精瑙﹂敍鍫滃▏閼宠棄鍟跨粣渚婄礆閿涘本妫ゅ▔鏇炵暔閸忋劎绫傞柨锟� */
+        /* Step1 濠㈡儼绮剧憴锕傛晬閸粌鈻忛柤瀹犳閸熻法绮ｆ笟濠勭闁挎稑鏈Λ銈呪枖閺囩偟鏆旈柛蹇嬪妿缁倿鏌ㄩ敓锟� */
         printf("[SelfTest] Step2 SKIP: Step1 failed, no correction\r\n");
         return;
     }
 
-    /* 缁楊兛绔存潪顕嗙窗閸忔娊妫撮幍鈧張澶婄安閸忔娊妫存担锟� STA 娴犲秳璐� HIGH 閻ㄥ嫰鈧岸浜� */
+    /* 缂佹鍏涚粩瀛樻姜椤曞棛绐楅柛蹇斿▕濡挳骞嶉埀顒勫嫉婢跺﹦瀹夐柛蹇斿▕濡瓨鎷呴敓锟� STA 濞寸姴绉崇拹锟� HIGH 闁汇劌瀚伴埀顒佸哺娴滐拷 */
     for (uint8_t i = 0U; i < 3U; i++)
     {
         bool should_open = (HAL_GPIO_ReadPin(s_ch_map[i].en_port, s_ch_map[i].en_pin)
@@ -454,7 +461,7 @@ static void st_exec_step2(void)
         }
     }
 
-    /* 缁楊兛绨╂潪顕嗙窗閹垫挸绱戞惔鏃€澧﹀鈧担锟� STA 娴犲秳璐� LOW 閻ㄥ嫰鈧岸浜鹃敍鍫滅鞍闁夸礁鍑￠崷銊ь儑娑撯偓鏉烆喕鑵戠憴锝夋珟閿涳拷 */
+    /* 缂佹鍏涚花鈺傛姜椤曞棛绐楅柟鍨尭缁辨垶鎯旈弮鈧晶锕€顕ｉ埀顒佹媴閿燂拷 STA 濞寸姴绉崇拹锟� LOW 闁汇劌瀚伴埀顒佸哺娴滈箖鏁嶉崼婊呴瀺闂佸じ绀侀崙锟犲捶閵娧屽剳濞戞挴鍋撻弶鐑嗗枙閼垫垹鎲撮敐澶嬬彑闁挎冻鎷� */
     for (uint8_t i = 0U; i < 3U; i++)
     {
         bool should_open = (HAL_GPIO_ReadPin(s_ch_map[i].en_port, s_ch_map[i].en_pin)
@@ -472,8 +479,8 @@ static void st_exec_step2(void)
 }
 
 /**
- * @brief  Step2 缂佹挻娼弮鍫曠崣鐠囦焦澧嶉張澶愨偓姘朵壕 K_1_STA 閺勵垰鎯佹稉锟� K_EN 閺堢喐婀滄稉鈧懛锟�
- * @retval true = 閸忋劑鍎存稉鈧懛杈剧礄闁俺绻冮敍澶涚幢false = 鐎涙ê婀稉宥呭爱闁板稄绱欐径杈Е閿涳拷
+ * @brief  Step2 缂備焦鎸诲ḿ顐﹀籍閸洜宕ｉ悹鍥︾劍婢у秹寮垫径鎰ㄥ亾濮樻湹澹� K_1_STA 闁哄嫷鍨伴幆浣圭▔閿燂拷 K_EN 闁哄牏鍠愬﹢婊勭▔閳ь剟鎳涢敓锟�
+ * @retval true = 闁稿繈鍔戦崕瀛樼▔閳ь剟鎳涙潏鍓х闂侇偅淇虹换鍐晬婢舵稓骞alse = 閻庢稒锚濠€顏呯▔瀹ュ懎鐖遍梺鏉跨▌缁辨瑦寰勬潏顐バ曢柨娑虫嫹
  */
 static bool st_verify_step2(void)
 {
@@ -508,8 +515,8 @@ static bool st_verify_step2(void)
 }
 
 /**
- * @brief  Step3閿涙碍顥呴弻銉ょ瑏鐠猴拷 SW_STA閿涘牊甯寸憴锕€娅掗敍澶嬫Ц閸氾缚绗� K_EN 閺堢喐婀滄稉鈧懛锟�
- * @note   閹恒儴袝閸ｃ劍妫ゅ▔鏇⑩偓姘崇箖鏉烆垯娆㈢痪鐘绘晩閿涘奔绗夐崠褰掑帳閻╁瓨甯撮弽鍥唶婢惰精瑙�
+ * @brief  Step3闁挎稒纰嶉ˉ鍛村蓟閵夈倗鐟忛悹鐚存嫹 SW_STA闁挎稑鐗婄敮瀵告喆閿曗偓濞呮帡鏁嶆径瀣﹂柛姘剧細缁楋拷 K_EN 闁哄牏鍠愬﹢婊勭▔閳ь剟鎳涢敓锟�
+ * @note   闁规亽鍎磋闁革絻鍔嶅Λ銈呪枖閺団懇鍋撳宕囩畺閺夌儐鍨▎銏㈢棯閻樼粯鏅╅柨娑樺缁楀宕犺ぐ鎺戝赋闁烩晛鐡ㄧ敮鎾冀閸ヮ亶鍞跺鎯扮簿鐟欙拷
  */
 static void st_exec_step3(void)
 {
@@ -539,11 +546,11 @@ static void st_exec_step3(void)
 }
 
 /**
- * @brief  Step4閿涙俺袝閸欐垳绔村▎鈩冧刊鎼达附娲块弬甯礉濡偓閺屻儰绗佺捄锟� NTC 閺勵垰鎯佹潻鍥ㄤ刊閿涘牃澧�60鎺矯閿涳拷
+ * @brief  Step4闁挎稒淇鸿闁告瑦鍨崇粩鏉戔枎閳╁啩鍒婇幖杈鹃檮濞插潡寮敮顔剧婵☆偀鍋撻柡灞诲劙缁椾胶鎹勯敓锟� NTC 闁哄嫷鍨伴幆浣规交閸ャ劋鍒婇柨娑樼墐婢э拷60閹虹煰闁挎冻鎷�
  */
 static void st_exec_step4(void)
 {
-    Temperature_Update(); /* 閸掗攱鏌婂〒鈺佸閺佺増宓侀敍鍫ｅ殰濡偓閺堢喖妫� 1s 娴犺濮熼弳鍌氫粻閿涘矂娓堕幍瀣З鐟欙箑褰傞敍锟� */
+    Temperature_Update(); /* 闁告帡鏀遍弻濠傘€掗埡浣割唺闁轰胶澧楀畵渚€鏁嶉崼锝呮婵☆偀鍋撻柡鍫㈠枛濡拷 1s 濞寸姾顕ф慨鐔煎汲閸屾矮绮婚柨娑樼焸濞撳爼骞嶇€ｎ亜袟閻熸瑱绠戣ぐ鍌炴晬閿燂拷 */
 
     bool pass = true;
     for (uint8_t i = 0U; i < 3U; i++)
