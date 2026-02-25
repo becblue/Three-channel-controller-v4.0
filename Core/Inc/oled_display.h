@@ -158,11 +158,18 @@ void OLED_ShowChar(uint8_t x, uint8_t y, char ch, OLED_Font_e font);
 void OLED_ShowNum(uint8_t x, uint8_t y, int32_t num, uint8_t len, OLED_Font_e font);
 
 /**
- * @brief  Display company logo (centered)
- * @note   Shows logo at startup
+ * @brief  Display customer logo (centered, bitmap rendering)
+ * @note   Shows logo at startup; uses row-scan bitmap data
  * @retval None
  */
 void OLED_ShowLogo(void);
+
+/**
+ * @brief  Display Minyer brand logo in self-test progress screen
+ * @note   Renders 115x27 px Image2Lcd bitmap into row1~4 (y=10~36)
+ * @retval None
+ */
+void OLED_ShowMinyerLogo(void);
 
 /**
  * @brief  Display progress bar

@@ -257,6 +257,8 @@ static void update_oled_main_screen(void)
   uint16_t  fan_rpm;
   uint8_t   idx;
   uint8_t   i;
+  uint8_t   tlen;
+  uint8_t   tx;
 
   err_flags = Alarm_GetErrorFlags();
   active_ch = Relay_GetActiveChannel();
@@ -264,7 +266,7 @@ static void update_oled_main_screen(void)
   fan_spd   = Temperature_GetFanSpeed();
   fan_rpm   = Temperature_GetFanRPM();
 
-  /* -- Alarm area (row 0~1) -- */
+  /* -- 报警区 row0 (y=0~7) + 分割线 y=15 -- */
   OLED_ClearArea(OLED_AREA_ALARM);
   if (err_flags == (uint16_t)ERROR_TYPE_NONE)
   {
@@ -287,22 +289,27 @@ static void update_oled_main_screen(void)
   }
   OLED_DrawLine(0, 15, 127, 15);
 
-  /* -- Channel area (row 2~5) -- */
+  /* -- 通道区 row2~4：三路分行显示，row5 留空，分割线 y=47 -- */
   OLED_ClearArea(OLED_AREA_CHANNEL);
-  snprintf(buf, sizeof(buf), "CH:1=%-3s 2=%-3s 3=%-3s",
-           (active_ch == CHANNEL_1) ? "ON" : "OFF",
-           (active_ch == CHANNEL_2) ? "ON" : "OFF",
-           (active_ch == CHANNEL_3) ? "ON" : "OFF");
+  snprintf(buf, sizeof(buf), "CH:1=%s", (active_ch == CHANNEL_1) ? "ON " : "OFF");
   OLED_ShowString(0, 2, buf, OLED_FONT_6X8);
+  snprintf(buf, sizeof(buf), "CH:2=%s", (active_ch == CHANNEL_2) ? "ON " : "OFF");
+  OLED_ShowString(0, 3, buf, OLED_FONT_6X8);
+  snprintf(buf, sizeof(buf), "CH:3=%s", (active_ch == CHANNEL_3) ? "ON " : "OFF");
+  OLED_ShowString(0, 4, buf, OLED_FONT_6X8);
   OLED_DrawLine(0, 47, 127, 47);
 
-  /* -- Temperature area (row 6~7) -- */
+  /* -- 温度/风扇区 row6~7 -- */
   OLED_ClearArea(OLED_AREA_TEMP);
-  snprintf(buf, sizeof(buf), "%d.%d/%d.%d/%d.%dC",
-           t1 / 10, abs(t1 % 10),
-           t2 / 10, abs(t2 % 10),
-           t3 / 10, abs(t3 % 10));
-  OLED_ShowString(0, 6, buf, OLED_FONT_6X8);
+
+  /* row6：整数温度居中显示，格式 "T1:XX T2:XX T3:XX"（无"C"后缀） */
+  snprintf(buf, sizeof(buf), "T1:%2d T2:%2d T3:%2d",
+           (int)(t1 / 10), (int)(t2 / 10), (int)(t3 / 10));
+  tlen = (uint8_t)strlen(buf);
+  tx   = (uint8_t)((128U - (uint16_t)tlen * 6U) / 2U);
+  OLED_ShowString(tx, 6, buf, OLED_FONT_6X8);
+
+  /* row7：风扇占空比 + 转速 */
   snprintf(buf, sizeof(buf), "Fan:%d%%  RPM:%d", fan_spd, fan_rpm);
   OLED_ShowString(0, 7, buf, OLED_FONT_6X8);
 
