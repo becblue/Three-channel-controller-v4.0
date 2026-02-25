@@ -68,6 +68,9 @@ bool DataLogger_Init(void)
 {
     uint8_t buf[sizeof(LogMeta_t)];
 
+    /* Short delay so SPI/Flash is stable after power-on before first read */
+    HAL_Delay(5U);
+
     if (W25Q_Read(META_WRITE_ADDR, buf, sizeof(LogMeta_t)) != W25Q_OK) {
         s_logger_ready = false;
         return false;
@@ -375,9 +378,10 @@ static bool write_record(const LogRecord_t *rec)
 
     check_pre_erase();
 
-    /* Flush metadata to Flash every 16 records to reduce Sector 0 wear */
-    if ((s_meta.record_count % 16U) == 0U) {
-        save_meta();
+    /* Persist metadata after every write so reboot sees correct write_ptr/record_count
+     * and does not overwrite from 0 or show wrong total (Sector 0 wear acceptable) */
+    if (!save_meta()) {
+        return false;
     }
 
     return true;

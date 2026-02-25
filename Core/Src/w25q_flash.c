@@ -6,10 +6,10 @@
   * @author         : Three-channel Controller Team
   * @date           : 2026-02-25
   ******************************************************************************
-  * @note
-  *   SPI2 hardware NSS (PB12) is managed by HAL automatically.
-  *   All write operations include internal WriteEnable sequence.
-  *   SectorErase is a blocking call (up to 400 ms).
+ * @note
+ *   SPI2 uses software NSS: PB12 is driven by this driver (NSS low during transfer).
+ *   All write operations include internal WriteEnable sequence.
+ *   SectorErase is a blocking call (up to 400 ms).
   ******************************************************************************
   */
 /* USER CODE END Header */
@@ -21,6 +21,10 @@
 
 /* Private defines -----------------------------------------------------------*/
 #define SPI_BYTE_TIMEOUT_MS     5U   /* per-byte SPI timeout (ms) */
+#define W25Q_NSS_PORT          GPIOB
+#define W25Q_NSS_PIN           GPIO_PIN_12
+#define W25Q_NSS_LOW()         HAL_GPIO_WritePin(W25Q_NSS_PORT, W25Q_NSS_PIN, GPIO_PIN_RESET)
+#define W25Q_NSS_HIGH()        HAL_GPIO_WritePin(W25Q_NSS_PORT, W25Q_NSS_PIN, GPIO_PIN_SET)
 
 /* Private variables ---------------------------------------------------------*/
 static uint8_t s_tx_buf[4];   /* shared cmd+addr TX buffer (max 4 bytes) */
@@ -41,9 +45,12 @@ W25Q_Result_e W25Q_Init(void)
     uint8_t tx4[4] = {W25Q_CMD_JEDEC_ID, 0xFFU, 0xFFU, 0xFFU};
     uint8_t rx4[4] = {0};
 
+    W25Q_NSS_LOW();
     if (spi_transceive(tx4, rx4, 4U) != HAL_OK) {
+        W25Q_NSS_HIGH();
         return W25Q_ERROR;
     }
+    W25Q_NSS_HIGH();
 
     if ((rx4[1] != W25Q_MANUFACTURER_ID) ||
         (rx4[2] != W25Q_DEVICE_ID_HI)    ||
@@ -55,56 +62,44 @@ W25Q_Result_e W25Q_Init(void)
 
 /**
   * @brief  Read data from Flash (any length, auto-split into 256-byte chunks)
-  * @note   Each 256-byte chunk is read in a SINGLE HAL_SPI_TransmitReceive call
-  *         that includes cmd(1) + addr(3) + data(up to 256) so that hardware NSS
-  *         stays asserted for the entire duration.  Splitting into two separate HAL
-  *         calls would deassert NSS between cmd/addr and data, aborting the read.
+  * @note   Software NSS: NSS low, then Transmit(cmd+addr 4 bytes), then Receive(data).
+  *         First byte received is D0; no phase ambiguity.
   */
 W25Q_Result_e W25Q_Read(uint32_t addr, uint8_t *buf, uint32_t len)
 {
-    /* Combined frame: 1 cmd byte + 3 addr bytes + up to 256 data bytes = 260 bytes max */
-    uint8_t  tx_frame[4U + 256U];
-    uint8_t  rx_frame[4U + 256U];
-    uint32_t remain;
-    uint32_t offset;
+    uint32_t remain = len;
+    uint32_t offset = 0U;
     uint16_t chunk;
-    uint16_t i;
+    uint32_t timeout;
 
     if ((buf == NULL) || (len == 0U)) {
         return W25Q_ERROR;
     }
 
-    remain = len;
-    offset = 0U;
-
     while (remain > 0U) {
         chunk = (remain > 256U) ? 256U : (uint16_t)remain;
+        timeout = (uint32_t)chunk * SPI_BYTE_TIMEOUT_MS;
+        if (timeout < 50U) { timeout = 50U; }
 
-        /* Build one frame: READ cmd + 24-bit address + dummy 0xFF bytes for data phase */
-        tx_frame[0] = W25Q_CMD_READ_DATA;
-        tx_frame[1] = (uint8_t)((addr >> 16U) & 0xFFU);
-        tx_frame[2] = (uint8_t)((addr >>  8U) & 0xFFU);
-        tx_frame[3] = (uint8_t)( addr         & 0xFFU);
-        for (i = 0U; i < chunk; i++) {
-            tx_frame[4U + i] = 0xFFU;
-        }
+        s_tx_buf[0] = W25Q_CMD_READ_DATA;
+        s_tx_buf[1] = (uint8_t)((addr >> 16U) & 0xFFU);
+        s_tx_buf[2] = (uint8_t)((addr >>  8U) & 0xFFU);
+        s_tx_buf[3] = (uint8_t)( addr         & 0xFFU);
 
-        /* Single HAL call keeps NSS low for cmd+addr+data (W25Q requirement) */
-        if (HAL_SPI_TransmitReceive(&hspi2, tx_frame, rx_frame,
-                                    (uint16_t)(4U + chunk),
-                                    W25Q_TIMEOUT_READ) != HAL_OK) {
+        W25Q_NSS_LOW();
+        if (spi_transmit(s_tx_buf, 4U) != HAL_OK) {
+            W25Q_NSS_HIGH();
             return W25Q_ERROR;
         }
-
-        /* W25Q outputs first data byte on same clock as 4th TX byte (low addr).
-         * So 16 data bytes are at rx_frame[3..18], not [4..19]. */
-        for (i = 0U; i < chunk; i++) {
-            buf[offset + i] = rx_frame[3U + i];
+        if (HAL_SPI_Receive(&hspi2, buf + offset, chunk, timeout) != HAL_OK) {
+            W25Q_NSS_HIGH();
+            return W25Q_ERROR;
         }
+        W25Q_NSS_HIGH();
 
         offset += chunk;
         remain -= chunk;
-        addr   += chunk;  /* advance address for next 256-byte chunk */
+        addr   += chunk;
     }
 
     return W25Q_OK;
@@ -128,9 +123,12 @@ W25Q_Result_e W25Q_SectorErase(uint32_t sector_addr)
     s_tx_buf[2] = (uint8_t)((aligned >>  8U) & 0xFFU);
     s_tx_buf[3] = (uint8_t)( aligned         & 0xFFU);
 
+    W25Q_NSS_LOW();
     if (spi_transmit(s_tx_buf, 4U) != HAL_OK) {
+        W25Q_NSS_HIGH();
         return W25Q_ERROR;
     }
+    W25Q_NSS_HIGH();
 
     return W25Q_WaitBusy(W25Q_TIMEOUT_SECTOR_ERA);
 }
@@ -158,9 +156,12 @@ W25Q_Result_e W25Q_PageProgram(uint32_t addr, const uint8_t *buf, uint16_t len)
         frame[4U + i] = buf[i];
     }
 
+    W25Q_NSS_LOW();
     if (spi_transmit(frame, (uint16_t)(4U + len)) != HAL_OK) {
+        W25Q_NSS_HIGH();
         return W25Q_ERROR;
     }
+    W25Q_NSS_HIGH();
 
     return W25Q_WaitBusy(W25Q_TIMEOUT_PAGE_PROG);
 }
@@ -175,9 +176,12 @@ W25Q_Result_e W25Q_WaitBusy(uint32_t timeout_ms)
     uint8_t  rx[2];
 
     while (1) {
+        W25Q_NSS_LOW();
         if (spi_transceive(tx, rx, 2U) != HAL_OK) {
+            W25Q_NSS_HIGH();
             return W25Q_ERROR;
         }
+        W25Q_NSS_HIGH();
         if ((rx[1] & W25Q_SR1_BUSY) == 0U) {
             return W25Q_OK;
         }
@@ -227,8 +231,11 @@ static HAL_StatusTypeDef spi_transceive(const uint8_t *tx, uint8_t *rx, uint16_t
 static W25Q_Result_e send_write_enable(void)
 {
     uint8_t cmd = W25Q_CMD_WRITE_ENABLE;
+    W25Q_NSS_LOW();
     if (spi_transmit(&cmd, 1U) != HAL_OK) {
+        W25Q_NSS_HIGH();
         return W25Q_ERROR;
     }
+    W25Q_NSS_HIGH();
     return W25Q_OK;
 }
