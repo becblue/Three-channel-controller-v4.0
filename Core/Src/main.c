@@ -35,6 +35,8 @@
 #include "relay_control.h"
 #include "safety_monitor.h"
 #include "self_test.h"
+#include "w25q_flash.h"
+#include "data_logger.h"
 #include <stdlib.h>
 #include <string.h>
 /* USER CODE END Includes */
@@ -116,6 +118,13 @@ int main(void)
   Relay_Init();
   Safety_Init();
 
+  /* 初始化外部 Flash 及日志模块 */
+  if (W25Q_Init() == W25Q_OK) {
+    DataLogger_Init();
+  } else {
+    printf("[System] W25Q Flash init FAILED, logging disabled\r\n");
+  }
+
   printf("[System] All modules initialized, starting self-test\r\n");
   SelfTest_Start();
 
@@ -138,11 +147,12 @@ int main(void)
 
     uint32_t now = HAL_GetTick();
 
-    /* 20ms task: relay FSM (always runs; self-test correction pulses depend on this) */
+    /* 20ms task: relay FSM + 按键长按扫描（始终运行）*/
     if ((now - tick_20ms) >= 20U)
     {
       tick_20ms = now;
       Relay_Update();
+      DataLogger_KeyScan();
     }
 
     /* 50ms task: alarm output drive (always runs) */
@@ -163,11 +173,12 @@ int main(void)
     }
     else
     {
-      /* 100ms: safety monitor */
+      /* 100ms: safety monitor + 日志后台任务 */
       if ((now - tick_100ms) >= 100U)
       {
         tick_100ms = now;
         Safety_Update();
+        DataLogger_BackgroundTask();
       }
 
       /* 500ms: OLED main screen refresh */

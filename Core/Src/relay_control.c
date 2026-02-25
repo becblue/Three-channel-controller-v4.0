@@ -2,7 +2,7 @@
 /**
   ******************************************************************************
   * @file           : relay_control.c
-  * @brief          : 继电器控制模块实现
+  * @brief          : 继电器控制模块实�?
   * @author         : Three-channel Controller Team
   * @date           : 2026-02-13
   ******************************************************************************
@@ -11,6 +11,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "relay_control.h"
+#include "data_logger.h"
 #include "gpio.h"
 #include <stdio.h>
 #include <string.h>
@@ -41,7 +42,7 @@ static GPIO_PinState relay_read_sta(RelayUnit_t *unit);
  */
 void Relay_Init(void)
 {
-    // 清零结构体
+    // 清零结构�?
     memset(&relay_manager, 0, sizeof(Relay_Manager_t));
     
     // 初始化通道1的GPIO映射
@@ -104,7 +105,7 @@ void Relay_Init(void)
     relay_manager.channels[2].en_port = K3_EN_GPIO_Port;
     relay_manager.channels[2].en_pin = K3_EN_Pin;
     
-    // 初始化所有继电器为关闭状态
+    // 初始化所有继电器为关闭状�?
     for (int i = 0; i < 3; i++)
     {
         relay_manager.channels[i].relay1.fsm_state = RELAY_FSM_CLOSED;
@@ -134,7 +135,7 @@ void Relay_Init(void)
         relay_manager.channels[i].en_int.interrupt_time = 0;
         relay_manager.channels[i].en_int.verify_step = 0;
         
-        // 读取并记录EN引脚的初始状态
+        // 读取并记录EN引脚的初始状�?
         GPIO_TypeDef *en_port = relay_manager.channels[i].en_port;
         uint16_t en_pin = relay_manager.channels[i].en_pin;
         relay_manager.channels[i].en_int.last_pin_state = HAL_GPIO_ReadPin(en_port, en_pin);
@@ -183,10 +184,13 @@ bool Relay_OpenChannel(Channel_e channel)
     relay_start_pulse(&relay_manager.channels[ch_idx].relay1, true);
     relay_start_pulse(&relay_manager.channels[ch_idx].relay2, true);
     
-    // 更新通道状态
+    // 更新通道状�?
     relay_manager.channels[ch_idx].is_active = true;
     relay_manager.channels[ch_idx].pending_op = RELAY_OP_OPEN;
     relay_manager.active_channel = channel;
+
+    /* Log channel open action to external Flash */
+    DataLogger_WriteChannelAction((uint8_t)channel, 1);
     
     return true;
 }
@@ -215,11 +219,14 @@ bool Relay_CloseChannel(Channel_e channel)
     relay_start_pulse(&relay_manager.channels[ch_idx].relay1, false);
     relay_start_pulse(&relay_manager.channels[ch_idx].relay2, false);
     
-    // 更新通道状态
+    // 更新通道状�?
     relay_manager.channels[ch_idx].is_active = false;
     relay_manager.channels[ch_idx].pending_op = RELAY_OP_CLOSE;
+
+    /* Log channel close action to external Flash */
+    DataLogger_WriteChannelAction((uint8_t)channel, 0);
     
-    // 如果是当前激活通道，清除激活标志
+    // 如果是当前激活通道，清除激活标�?
     if (relay_manager.active_channel == channel)
     {
         relay_manager.active_channel = CHANNEL_NONE;
@@ -245,11 +252,11 @@ void Relay_CloseAll(void)
 }
 
 /**
- * @brief  上电复位：强制对三路全部发送 OFF 脉冲
- * @note   与 Relay_CloseAll() 的区别：
- *         - 不检查 is_active 标志，磁保持继电器上电后状态未知，全部强制关断
- *         - 用于自检 LOGO 阶段（2000ms），脉冲 500ms 内完成
- *         - 不影响 Step2 纠错逻辑，两者互补
+ * @brief  上电复位：强制对三路全部发�?OFF 脉冲
+ * @note   �?Relay_CloseAll() 的区别：
+ *         - 不检�?is_active 标志，磁保持继电器上电后状态未知，全部强制关断
+ *         - 用于自检 LOGO 阶段�?000ms），脉冲 500ms 内完�?
+ *         - 不影�?Step2 纠错逻辑，两者互�?
  */
 void Relay_ForceCloseAll(void)
 {
@@ -257,7 +264,7 @@ void Relay_ForceCloseAll(void)
 
     for (uint8_t i = 0U; i < 3U; i++)
     {
-        /* 若通道正忙（上一次脉冲未完成），跳过，避免引脚状态冲突 */
+        /* 若通道正忙（上一次脉冲未完成），跳过，避免引脚状态冲�?*/
         if (IS_RELAY_BUSY(&relay_manager.channels[i].relay1) ||
             IS_RELAY_BUSY(&relay_manager.channels[i].relay2))
         {
@@ -265,7 +272,7 @@ void Relay_ForceCloseAll(void)
             continue;
         }
 
-        /* 直接发送 OFF 脉冲，无视 is_active */
+        /* 直接发�?OFF 脉冲，无�?is_active */
         relay_start_pulse(&relay_manager.channels[i].relay1, false);
         relay_start_pulse(&relay_manager.channels[i].relay2, false);
         relay_manager.channels[i].is_active  = false;
@@ -298,7 +305,7 @@ bool Relay_IsChannelBusy(Channel_e channel)
 }
 
 /**
- * @brief  检查通道状态反馈是否正常
+ * @brief  检查通道状态反馈是否正�?
  */
 bool Relay_CheckChannelFeedback(Channel_e channel)
 {
@@ -306,7 +313,7 @@ bool Relay_CheckChannelFeedback(Channel_e channel)
     
     uint8_t ch_idx = channel - 1;
     
-    // 检查两路继电器的状态反馈
+    // 检查两路继电器的状态反�?
     bool relay1_ok = relay_check_feedback(&relay_manager.channels[ch_idx].relay1);
     bool relay2_ok = relay_check_feedback(&relay_manager.channels[ch_idx].relay2);
     
@@ -363,8 +370,8 @@ void Relay_Update(void)
                         else
                         {
                             /* EN 变高：先判断 DC 电源是否存在
-                             *   DC_CTRL = LOW  → 外部主动拉低，电源正常，属于正常关断指令
-                             *   DC_CTRL = HIGH → 上拉拉高，外部信号消失，属于异常掉电
+                             *   DC_CTRL = LOW  �?外部主动拉低，电源正常，属于正常关断指令
+                             *   DC_CTRL = HIGH �?上拉拉高，外部信号消失，属于异常掉电
                              *                    不操作继电器，O 类报警由 Safety_Update() 自动处理 */
                             if (HAL_GPIO_ReadPin(DC_CTRL_GPIO_Port, DC_CTRL_Pin) == GPIO_PIN_RESET)
                             {
@@ -373,7 +380,7 @@ void Relay_Update(void)
                             }
                             else
                             {
-                                /* 异常掉电：保持继电器当前状态，仅输出报警 */
+                                /* 异常掉电：保持继电器当前状态，仅输出报�?*/
                                 printf("[ISR] K%d_EN HIGH + DC FAIL -> power loss detected, CH%d unchanged\r\n", i+1, i+1);
                             }
                         }
@@ -443,7 +450,7 @@ void Relay_PrintStatus(void)
     {
         printf("Channel %d:\r\n", i+1);
         
-        // 继电器1状态
+        // 继电�?状�?
         printf("  Relay1: ");
         switch (relay_manager.channels[i].relay1.fsm_state)
         {
@@ -457,7 +464,7 @@ void Relay_PrintStatus(void)
         }
         printf(" | STA=%d\r\n", relay_read_sta(&relay_manager.channels[i].relay1));
         
-        // 继电器2状态
+        // 继电�?状�?
         printf("  Relay2: ");
         switch (relay_manager.channels[i].relay2.fsm_state)
         {
@@ -471,7 +478,7 @@ void Relay_PrintStatus(void)
         }
         printf(" | STA=%d\r\n", relay_read_sta(&relay_manager.channels[i].relay2));
         
-        // 接触器状态
+        // 接触器状�?
         GPIO_PinState sw_state = HAL_GPIO_ReadPin(relay_manager.channels[i].sw_sta_port, 
                                                    relay_manager.channels[i].sw_sta_pin);
         printf("  Switch: STA=%d\r\n", sw_state);
@@ -515,7 +522,7 @@ void Relay_K3_EN_ISR(void)
 }
 
 /**
- * @brief  获取继电器管理器指针（调试用）
+ * @brief  获取继电器管理器指针（调试用�?
  */
 const Relay_Manager_t* Relay_GetManager(void)
 {
@@ -525,17 +532,17 @@ const Relay_Manager_t* Relay_GetManager(void)
 /* Private functions ---------------------------------------------------------*/
 
 /**
- * @brief  启动继电器脉冲
- * @param  unit: 继电器单元指针
- * @param  turn_on: true-打开（ON脉冲），false-关闭（OFF脉冲）
- * @note   磁保持继电器：静态高电平，触发时输出500ms低电平脉冲
+ * @brief  启动继电器脉�?
+ * @param  unit: 继电器单元指�?
+ * @param  turn_on: true-打开（ON脉冲），false-关闭（OFF脉冲�?
+ * @note   磁保持继电器：静态高电平，触发时输出500ms低电平脉�?
  */
 static void relay_start_pulse(RelayUnit_t *unit, bool turn_on)
 {
     if (turn_on)
     {
-        // 输出ON脉冲（低电平触发）
-        // ON引脚输出低电平，OFF引脚保持高电平
+        // 输出ON脉冲（低电平触发�?
+        // ON引脚输出低电平，OFF引脚保持高电�?
         HAL_GPIO_WritePin(unit->on_port, unit->on_pin, GPIO_PIN_RESET);
         HAL_GPIO_WritePin(unit->off_port, unit->off_pin, GPIO_PIN_SET);
         unit->fsm_state = RELAY_FSM_OPENING;
@@ -543,22 +550,22 @@ static void relay_start_pulse(RelayUnit_t *unit, bool turn_on)
     }
     else
     {
-        // 输出OFF脉冲（低电平触发）
-        // OFF引脚输出低电平，ON引脚保持高电平
+        // 输出OFF脉冲（低电平触发�?
+        // OFF引脚输出低电平，ON引脚保持高电�?
         HAL_GPIO_WritePin(unit->on_port, unit->on_pin, GPIO_PIN_SET);
         HAL_GPIO_WritePin(unit->off_port, unit->off_pin, GPIO_PIN_RESET);
         unit->fsm_state = RELAY_FSM_CLOSING;
         unit->expected_state = false;
     }
     
-    // 记录脉冲开始时间
+    // 记录脉冲开始时�?
     unit->pulse_start_time = HAL_GetTick();
     unit->debounce_count = 0;
 }
 
 /**
- * @brief  停止继电器脉冲
- * @param  unit: 继电器单元指针
+ * @brief  停止继电器脉�?
+ * @param  unit: 继电器单元指�?
  * @note   磁保持继电器：脉冲结束后，恢复所有引脚为高电平（静态状态）
  */
 static void relay_stop_pulse(RelayUnit_t *unit)
@@ -570,7 +577,7 @@ static void relay_stop_pulse(RelayUnit_t *unit)
 
 /**
  * @brief  更新继电器状态机
- * @param  unit: 继电器单元指针
+ * @param  unit: 继电器单元指�?
  */
 static void relay_update_fsm(RelayUnit_t *unit)
 {
@@ -580,16 +587,16 @@ static void relay_update_fsm(RelayUnit_t *unit)
     {
         case RELAY_FSM_OPENING:
         case RELAY_FSM_CLOSING:
-            // 检查脉冲是否完成（500ms）
+            // 检查脉冲是否完成（500ms�?
             if ((current_time - unit->pulse_start_time) >= RELAY_PULSE_WIDTH)
             {
                 // 停止脉冲
                 relay_stop_pulse(unit);
                 
-                // 等待状态反馈稳定
+                // 等待状态反馈稳�?
                 unit->debounce_count = 0;
                 
-                // 切换到对应的完成状态
+                // 切换到对应的完成状�?
                 if (unit->fsm_state == RELAY_FSM_OPENING)
                     unit->fsm_state = RELAY_FSM_OPENED;
                 else
@@ -602,7 +609,7 @@ static void relay_update_fsm(RelayUnit_t *unit)
             // 检查状态反馈（带防抖）
             if (!relay_check_feedback(unit))
             {
-                // 状态反馈异常
+                // 状态反馈异�?
                 unit->fsm_state = RELAY_FSM_ERROR;
                 printf("[Relay] Feedback error detected!\r\n");
             }
@@ -620,12 +627,12 @@ static void relay_update_fsm(RelayUnit_t *unit)
 
 /**
  * @brief  检查状态反馈（带防抖）
- * @param  unit: 继电器单元指针
+ * @param  unit: 继电器单元指�?
  * @retval true-反馈正常, false-反馈异常
  */
 static bool relay_check_feedback(RelayUnit_t *unit)
 {
-    // 读取STA引脚状态
+    // 读取STA引脚状�?
     GPIO_PinState sta_state = relay_read_sta(unit);
     
     // 判断是否符合预期
@@ -633,7 +640,7 @@ static bool relay_check_feedback(RelayUnit_t *unit)
     
     if (sta_state == expected)
     {
-        unit->debounce_count = 0;  // 状态正常，清零计数器
+        unit->debounce_count = 0;  // 状态正常，清零计数�?
         return true;
     }
     else
@@ -649,9 +656,9 @@ static bool relay_check_feedback(RelayUnit_t *unit)
 }
 
 /**
- * @brief  读取继电器状态反馈引脚
- * @param  unit: 继电器单元指针
- * @retval GPIO引脚状态
+ * @brief  读取继电器状态反馈引�?
+ * @param  unit: 继电器单元指�?
+ * @retval GPIO引脚状�?
  */
 static GPIO_PinState relay_read_sta(RelayUnit_t *unit)
 {
