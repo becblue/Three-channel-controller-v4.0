@@ -55,50 +55,55 @@ W25Q_Result_e W25Q_Init(void)
 
 /**
   * @brief  Read data from Flash (any length, auto-split into 256-byte chunks)
+  * @note   Each 256-byte chunk is read in a SINGLE HAL_SPI_TransmitReceive call
+  *         that includes cmd(1) + addr(3) + data(up to 256) so that hardware NSS
+  *         stays asserted for the entire duration.  Splitting into two separate HAL
+  *         calls would deassert NSS between cmd/addr and data, aborting the read.
   */
 W25Q_Result_e W25Q_Read(uint32_t addr, uint8_t *buf, uint32_t len)
 {
+    /* Combined frame: 1 cmd byte + 3 addr bytes + up to 256 data bytes = 260 bytes max */
+    uint8_t  tx_frame[4U + 256U];
+    uint8_t  rx_frame[4U + 256U];
     uint32_t remain;
     uint32_t offset;
     uint16_t chunk;
-    uint8_t  dummy_tx[256];
-    uint8_t  rx_chunk[256];
+    uint16_t i;
 
     if ((buf == NULL) || (len == 0U)) {
         return W25Q_ERROR;
     }
 
-    /* Send READ command + 24-bit address using shared buffer */
-    s_tx_buf[0] = W25Q_CMD_READ_DATA;
-    s_tx_buf[1] = (uint8_t)((addr >> 16U) & 0xFFU);
-    s_tx_buf[2] = (uint8_t)((addr >>  8U) & 0xFFU);
-    s_tx_buf[3] = (uint8_t)( addr         & 0xFFU);
-
-    {
-        uint8_t dummy4[4] = {0U};
-        if (spi_transceive(s_tx_buf, dummy4, 4U) != HAL_OK) {
-            return W25Q_ERROR;
-        }
-    }
-
-    /* Pre-fill dummy TX with 0xFF to clock out data */
-    for (uint16_t i = 0U; i < 256U; i++) {
-        dummy_tx[i] = 0xFFU;
-    }
-
     remain = len;
     offset = 0U;
+
     while (remain > 0U) {
         chunk = (remain > 256U) ? 256U : (uint16_t)remain;
-        if (HAL_SPI_TransmitReceive(&hspi2, dummy_tx, rx_chunk, chunk,
+
+        /* Build one frame: READ cmd + 24-bit address + dummy 0xFF bytes for data phase */
+        tx_frame[0] = W25Q_CMD_READ_DATA;
+        tx_frame[1] = (uint8_t)((addr >> 16U) & 0xFFU);
+        tx_frame[2] = (uint8_t)((addr >>  8U) & 0xFFU);
+        tx_frame[3] = (uint8_t)( addr         & 0xFFU);
+        for (i = 0U; i < chunk; i++) {
+            tx_frame[4U + i] = 0xFFU;
+        }
+
+        /* Single HAL call keeps NSS low for cmd+addr+data (W25Q requirement) */
+        if (HAL_SPI_TransmitReceive(&hspi2, tx_frame, rx_frame,
+                                    (uint16_t)(4U + chunk),
                                     W25Q_TIMEOUT_READ) != HAL_OK) {
             return W25Q_ERROR;
         }
-        for (uint16_t i = 0U; i < chunk; i++) {
-            buf[offset + i] = rx_chunk[i];
+
+        /* First 4 bytes of rx_frame are the cmd+addr overlap phase (ignored) */
+        for (i = 0U; i < chunk; i++) {
+            buf[offset + i] = rx_frame[4U + i];
         }
+
         offset += chunk;
         remain -= chunk;
+        addr   += chunk;  /* advance address for next 256-byte chunk */
     }
 
     return W25Q_OK;
