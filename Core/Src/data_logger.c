@@ -73,8 +73,10 @@ bool DataLogger_Init(void)
     }
     memcpy(&s_meta, buf, sizeof(LogMeta_t));
 
-    if (s_meta.magic != LOG_META_MAGIC) {
-        /* First use or after format: initialize metadata */
+    /* Validate metadata: magic must match AND write_ptr must be within data area */
+    if ((s_meta.magic != LOG_META_MAGIC) ||
+        (s_meta.write_ptr >= (LOG_DATA_SECTOR_COUNT * W25Q_SECTOR_SIZE))) {
+        /* First use, old/foreign data, or corrupted metadata: re-initialize */
         memset(&s_meta, 0, sizeof(LogMeta_t));
         s_meta.magic             = LOG_META_MAGIC;
         s_meta.write_ptr         = 0U;
@@ -274,8 +276,15 @@ void DataLogger_BackgroundTask(void)
                 return;
             }
 
+            /* CRC check: skip corrupted records */
             if (calc_crc8(raw, (uint8_t)(LOG_RECORD_SIZE - 1U)) != raw[LOG_RECORD_SIZE - 1U]) {
-                /* skip corrupted record */
+                s_dump_read_ptr += LOG_RECORD_SIZE;
+                output_cnt++;
+                continue;
+            }
+            /* Type validity check: type=0x00 means blank Flash (0xFF erased then
+             * programmed to 0x00 by another application), skip these garbage records */
+            if (raw[4] == 0x00U) {
                 s_dump_read_ptr += LOG_RECORD_SIZE;
                 output_cnt++;
                 continue;
