@@ -72,6 +72,19 @@ typedef struct {
 #define FAN_PULSE_PER_REV       2       ///< 每转脉冲数（根据风扇规格确定）
 
 /**
+ * @brief 风扇 RPM 测量抗干扰参数
+ *
+ * FAN_DEBOUNCE_MIN_MS：ISR 最小脉冲间隔（ms）
+ *   继电器切换 EMI 噪声通常 < 1ms；最高转速 ~4000RPM × 2脉冲/转 ÷ 60 ≈ 133Hz → 7.5ms 间隔
+ *   取 4ms 可过滤噪声，同时不误杀真实脉冲。
+ *
+ * FAN_RPM_AVG_SIZE：滑动平均窗口大小（统计周期数）
+ *   每 1s 采样一次，窗口 3 表示对最近 3s 的采样取平均，平滑瞬时跳变。
+ */
+#define FAN_DEBOUNCE_MIN_MS     4U      ///< ISR 防抖最小间隔（ms）
+#define FAN_RPM_AVG_SIZE        3U      ///< RPM 滑动平均窗口大小（1s 采样次数）
+
+/**
  * @brief 过温标志定义
  */
 #define TEMP_STATUS_NORMAL      0       ///< 正常（<35°C）

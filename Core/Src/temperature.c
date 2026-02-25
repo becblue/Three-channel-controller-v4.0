@@ -14,6 +14,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "temperature.h"
 #include "common_def.h"
+#include "relay_control.h"
 #include "usart.h"
 #include "adc.h"
 #include "tim.h"
@@ -35,9 +36,17 @@ typedef struct {
 // Temperature manager
 static Temperature_Manager_t temp_manager = {0};
 
-// Fan speed measurement
-volatile uint32_t fan_pulse_count = 0;  // Pulse counter (reset every 1s)
-static uint32_t last_update_tick = 0;   // Last 1s update timestamp
+// 妞嬪孩澧栨潪顒勨偓鐔哥ゴ闁诧拷
+volatile uint32_t fan_pulse_count    = 0U;  /* 1s 閸愬懏婀侀弫鍫ｅ墻閸愯尪顓搁弫甯礄ISR 缁鳖垰濮為敍锟� */
+static   uint32_t last_update_tick   = 0U;  /* 娑撳﹥顐� 1s 缂佺喕顓搁弮璺哄煝 */
+
+// ISR 闂冨弶濮堥敍姘愁唶瑜版洑绗傚▎鈩冩箒閺佸牐鍓﹂崘鑼畱閺冭泛鍩㈤敍宀冪箖濠婏拷 < FAN_DEBOUNCE_MIN_MS 閻ㄥ嫬娅旀竟锟�
+static volatile uint32_t s_last_pulse_tick = 0U;
+
+// RPM 濠婃垵濮╅獮鍐叉綆缂傛挸鍟块崠鐚寸礄瀵邦亞骞嗛梼鐔峰灙閿涘瞼鐛ラ崣锝呫亣鐏忥拷 FAN_RPM_AVG_SIZE閿涳拷
+static uint16_t s_rpm_buf[FAN_RPM_AVG_SIZE] = {0U};
+static uint8_t  s_rpm_buf_idx  = 0U;   /* 娑撳顐奸崘娆忓弳娴ｅ秶鐤� */
+static uint8_t  s_rpm_buf_cnt  = 0U;   /* 瀹告彃锝為崗銉ф畱閺堝鏅ラ弽閿嬫拱閺佸府绱欐稉濠囨 FAN_RPM_AVG_SIZE閿涳拷 */
 
 // NTC lookup table: Temperature -> Resistance (based on CSV data)
 static const NTC_Table_Entry_t ntc_table[] = {
@@ -169,25 +178,62 @@ uint16_t Temperature_GetFanRPM(void)
 }
 
 /**
- * @brief Fan pulse interrupt handler (called from EXTI ISR)
- * @note Increment pulse counter on FAN_SEN falling edge
+ * @brief  椋庢墖鑴夊啿涓柇澶勭悊锛團AN_SEN 涓嬮檷娌胯Е鍙戯級
+ * @note   鍔犲叆鏃堕棿闃叉姈锛氫袱娆′腑鏂棿闅� < FAN_DEBOUNCE_MIN_MS 鏃惰涓� EMI 鍣０锛屼涪寮冦€�
+ *         缁х數鍣ㄥ垏鎹� EMI < 1ms锛屾甯歌剦鍐叉渶楂橀鐜� ~133Hz锛�7.5ms闂撮殧锛夛紝4ms 鍙噯纭尯鍒嗐€�
  */
 void Temperature_FanPulseISR(void)
 {
-    fan_pulse_count++;
+    uint32_t now = HAL_GetTick();
+
+    if ((now - s_last_pulse_tick) >= FAN_DEBOUNCE_MIN_MS)
+    {
+        fan_pulse_count++;
+        s_last_pulse_tick = now;
+    }
+    /* else: 闂撮殧 < 4ms锛岃涓虹户鐢靛櫒鍒囨崲 EMI 鍣０锛屼涪寮� */
 }
 
 /**
- * @brief 1-second handler for RPM calculation
- * @note Call this every 1 second from timer or main loop
+ * @brief  1s 风扇转速统计（每秒调用一次）
+ *
+ * 三项保护逻辑：
+ *  1. 继电器忙碌时跳过：500ms 脉冲期间 EMI 可能污染计数，直接丢弃本次样本，
+ *     保持上次 RPM 显示值不变，避免 OLED 出现转速跳零。
+ *  2. EXTI 防抖已在 ISR 层过滤 < 4ms 噪声脉冲，本函数收到的是干净计数。
+ *  3. 滑动平均（窗口 FAN_RPM_AVG_SIZE）：对最近 N 次统计结果取均值，
+ *     平滑因单次统计误差引起的显示抖动。
  */
 void Temperature_1sHandler(void)
 {
-    // Calculate RPM: (pulse_count * 60) / pulses_per_revolution
-    temp_manager.fan_rpm = (fan_pulse_count * 60) / FAN_PULSE_PER_REV;
-    
-    // Reset counter
-    fan_pulse_count = 0;
+    /* ① 继电器切换期间跳过：清零受污染的计数，保持上次 RPM */
+    if (Relay_IsChannelBusy(CHANNEL_1) ||
+        Relay_IsChannelBusy(CHANNEL_2) ||
+        Relay_IsChannelBusy(CHANNEL_3))
+    {
+        fan_pulse_count = 0U;
+        return;
+    }
+
+    /* ② 计算本次原始 RPM，清零计数器 */
+    uint16_t raw_rpm = (uint16_t)((fan_pulse_count * 60U) / (uint32_t)FAN_PULSE_PER_REV);
+    fan_pulse_count  = 0U;
+
+    /* ③ 写入循环缓冲区 */
+    s_rpm_buf[s_rpm_buf_idx] = raw_rpm;
+    s_rpm_buf_idx = (uint8_t)((s_rpm_buf_idx + 1U) % FAN_RPM_AVG_SIZE);
+    if (s_rpm_buf_cnt < (uint8_t)FAN_RPM_AVG_SIZE)
+    {
+        s_rpm_buf_cnt++;
+    }
+
+    /* ④ 计算滑动平均并更新输出值 */
+    uint32_t sum = 0U;
+    for (uint8_t i = 0U; i < s_rpm_buf_cnt; i++)
+    {
+        sum += s_rpm_buf[i];
+    }
+    temp_manager.fan_rpm = (uint16_t)(sum / (uint32_t)s_rpm_buf_cnt);
 }
 
 uint8_t Temperature_GetOverheatFlag(uint8_t channel)
