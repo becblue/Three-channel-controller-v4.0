@@ -113,6 +113,8 @@ void DataLogger_BackgroundTask(void);
 void DataLogger_TriggerDump(void);
 void DataLogger_TriggerFormat(void);
 bool DataLogger_IsReady(void);
+bool DataLogger_IsOledLogActive(void);
+void DataLogger_OledLogRefresh(void);
 
 #ifdef __cplusplus
 }

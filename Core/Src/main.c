@@ -181,11 +181,14 @@ int main(void)
         DataLogger_BackgroundTask();
       }
 
-      /* 500ms: OLED main screen refresh */
+      /* 500ms: OLED main screen or log view refresh */
       if ((now - tick_500ms) >= 500U)
       {
         tick_500ms = now;
-        update_oled_main_screen();
+        if (DataLogger_IsOledLogActive())
+          DataLogger_OledLogRefresh();
+        else
+          update_oled_main_screen();
       }
 
       /* 1s: temperature update (1sHandler is called internally by Temperature_Update) */
@@ -283,6 +286,7 @@ static void update_oled_main_screen(void)
   if (err_flags == (uint16_t)ERROR_TYPE_NONE)
   {
     OLED_ShowString(0, 0, "Alarm: Normal       ", OLED_FONT_6X8);
+    OLED_ShowString(0, 1, "                    ", OLED_FONT_6X8);
   }
   else
   {
@@ -298,6 +302,17 @@ static void update_oled_main_screen(void)
     while (idx < 20U) { buf[idx++] = ' '; }
     buf[20] = '\0';
     OLED_ShowString(0, 0, buf, OLED_FONT_6X8);
+    for (i = 0U; i < 15U; i++)
+    {
+      if (((err_flags >> i) & 0x01U) != 0U)
+      {
+        const char *name = CommonDef_GetErrorString((ErrorType_e)(1U << i));
+        snprintf(buf, sizeof(buf), "%-20s", name ? name : "?");
+        buf[20] = '\0';
+        OLED_ShowString(0, 1, buf, OLED_FONT_6X8);
+        break;
+      }
+    }
   }
   OLED_DrawLine(0, 15, 127, 15);
 

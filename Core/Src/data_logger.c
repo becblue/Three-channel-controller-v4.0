@@ -29,6 +29,7 @@
 #include "w25q_flash.h"
 #include "usart.h"
 #include "main.h"
+#include "oled_display.h"
 #include "stm32f1xx_hal.h"
 #include <string.h>
 #include <stdio.h>
@@ -36,8 +37,12 @@
 /* Private defines -----------------------------------------------------------*/
 #define META_WRITE_ADDR         LOG_META_SECTOR_ADDR   /* Sector 0 base address */
 #define DUMP_BATCH_SIZE         8U                     /* records output per BackgroundTask call */
-#define KEY_STABLE_CONFIRM_CNT  50U                    /* 1000ms / 20ms = 50 counts */
+#define KEY_STABLE_CONFIRM_CNT  50U                    /* 1000ms / 20ms = 50 counts (UART dump) */
+#define KEY_5S_CNT              250U                   /* 5000ms / 20ms: enter OLED log */
+#define KEY_10S_CNT             500U                   /* 10000ms / 20ms: exit OLED log */
 #define UART_TX_TIMEOUT_MS      50U                    /* per-string UART TX timeout (ms) */
+#define OLED_LOG_LINES          6U                     /* log lines per screen (row 0~5), row6=page, row7=hint */
+#define OLED_LOG_LINE_CHARS     21U                    /* 6x8 font: 128/6 ~ 21 chars per line */
 
 /* Private variables ---------------------------------------------------------*/
 static bool     s_logger_ready        = false;  /* module ready flag */
@@ -50,6 +55,15 @@ static uint32_t s_dump_total          = 0U;    /* total records to dump this ses
 static uint16_t s_key1_cnt            = 0U;   /* KEY1 press counter (20ms ticks) */
 static uint16_t s_key2_cnt            = 0U;   /* KEY2 press counter (20ms ticks) */
 static bool     s_format_pending      = false;  /* format request flag */
+/* OLED log view: KEY1 5s enter, short press next/exit, KEY1 10s exit */
+static bool     s_oled_log_active     = false;
+static uint32_t s_oled_log_read_ptr   = 0U;    /* byte offset for current page start */
+static uint32_t s_oled_log_total      = 0U;    /* total records to show */
+static uint32_t s_oled_log_cur_page   = 0U;    /* 0-based page index */
+static uint32_t s_oled_log_total_pages = 0U;
+static bool     s_oled_log_need_draw  = false;
+static uint16_t s_oled_log_key1_cnt   = 0U;    /* KEY1 hold count in OLED log mode (for 10s exit) */
+static bool     s_key1_reached_1s     = false; /* true after 1s hold, to trigger UART dump on release if not 5s */
 
 /* Private function prototypes -----------------------------------------------*/
 static uint8_t  calc_crc8(const uint8_t *data, uint8_t len);
@@ -58,6 +72,8 @@ static bool     write_record(const LogRecord_t *rec);
 static void     check_pre_erase(void);
 static void     uart_print(const char *str);
 static void     format_record_text(const LogRecord_t *rec, char *out, uint16_t out_len);
+static void     format_record_short(const LogRecord_t *rec, char *out, uint16_t out_len);
+static void     draw_oled_log_page(void);
 
 /* Exported functions --------------------------------------------------------*/
 
@@ -183,6 +199,24 @@ void DataLogger_TriggerFormat(void)
 }
 
 /**
+  * @brief  Return whether OLED log view is active (main should call OledLogRefresh instead of main screen)
+  */
+bool DataLogger_IsOledLogActive(void)
+{
+    return s_oled_log_active;
+}
+
+/**
+  * @brief  Refresh OLED log view: draw current page when need_draw (called from main every 500ms when active)
+  */
+void DataLogger_OledLogRefresh(void)
+{
+    if (!s_oled_log_active || !s_oled_log_need_draw) { return; }
+    s_oled_log_need_draw = false;
+    draw_oled_log_page();
+}
+
+/**
   * @brief  Return logger ready status
   */
 bool DataLogger_IsReady(void)
@@ -192,21 +226,11 @@ bool DataLogger_IsReady(void)
 
 /**
   * @brief  Key scan (call every 20 ms from main loop)
-  *         KEY1=PC13, KEY2=PC14, active LOW (pull-up configured)
+  *         KEY1: 1s=UART dump (on release), 5s=enter OLED log, 10s(in log)=exit. KEY2: 1s=format.
   */
 void DataLogger_KeyScan(void)
 {
-    /* KEY1 (PC13): pressed = GPIO_PIN_RESET */
-    if (HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin) == GPIO_PIN_RESET) {
-        s_key1_cnt++;
-        if (s_key1_cnt == KEY_STABLE_CONFIRM_CNT) {
-            DataLogger_TriggerDump();
-        }
-    } else {
-        s_key1_cnt = 0U;
-    }
-
-    /* KEY2 (PC14): pressed = GPIO_PIN_RESET */
+    /* KEY2 (PC14): format, unchanged */
     if (HAL_GPIO_ReadPin(KEY2_GPIO_Port, KEY2_Pin) == GPIO_PIN_RESET) {
         s_key2_cnt++;
         if (s_key2_cnt == KEY_STABLE_CONFIRM_CNT) {
@@ -214,6 +238,58 @@ void DataLogger_KeyScan(void)
         }
     } else {
         s_key2_cnt = 0U;
+    }
+
+    /* KEY1 (PC13) */
+    if (HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin) == GPIO_PIN_RESET) {
+        if (s_oled_log_active) {
+            /* In OLED log mode: count for 10s exit */
+            s_oled_log_key1_cnt++;
+            if (s_oled_log_key1_cnt >= KEY_10S_CNT) {
+                s_oled_log_active = false;
+                s_oled_log_key1_cnt = 0U;
+            }
+        } else {
+            s_key1_cnt++;
+            if (s_key1_cnt >= KEY_STABLE_CONFIRM_CNT) {
+                s_key1_reached_1s = true;
+            }
+            if (s_key1_cnt == KEY_5S_CNT) {
+                /* Enter OLED log: do not trigger UART dump */
+                s_oled_log_total = s_logger_ready
+                    ? ((s_meta.record_count < LOG_MAX_RECORDS) ? s_meta.record_count : LOG_MAX_RECORDS)
+                    : 0U;
+                s_oled_log_total_pages = (s_oled_log_total > 0U)
+                    ? ((s_oled_log_total + OLED_LOG_LINES - 1U) / OLED_LOG_LINES) : 1U;
+                s_oled_log_active       = true;
+                s_oled_log_read_ptr     = 0U;
+                s_oled_log_cur_page     = 0U;
+                s_oled_log_need_draw    = true;
+                s_oled_log_key1_cnt     = 0U;
+                s_key1_reached_1s       = false;
+            }
+        }
+    } else {
+        /* KEY1 released */
+        if (s_oled_log_active) {
+            if (s_oled_log_key1_cnt > 0U && s_oled_log_key1_cnt < KEY_10S_CNT) {
+                /* Short press: next page or exit if last page */
+                if (s_oled_log_cur_page + 1U >= s_oled_log_total_pages) {
+                    s_oled_log_active = false;
+                } else {
+                    s_oled_log_cur_page++;
+                    s_oled_log_read_ptr = s_oled_log_cur_page * OLED_LOG_LINES * LOG_RECORD_SIZE;
+                    s_oled_log_need_draw = true;
+                }
+            }
+            s_oled_log_key1_cnt = 0U;
+        } else {
+            if (s_key1_reached_1s && s_key1_cnt < KEY_5S_CNT) {
+                DataLogger_TriggerDump();
+            }
+            s_key1_cnt        = 0U;
+            s_key1_reached_1s = false;
+        }
     }
 }
 
@@ -425,6 +501,31 @@ static void uart_print(const char *str)
 }
 
 /**
+  * @brief  Return single letter (A-O) for OLED short display
+  */
+static char alarm_type_letter(uint16_t t)
+{
+    switch (t) {
+        case 0x0001U: return 'A';
+        case 0x0002U: return 'B';
+        case 0x0004U: return 'C';
+        case 0x0008U: return 'D';
+        case 0x0010U: return 'E';
+        case 0x0020U: return 'F';
+        case 0x0040U: return 'G';
+        case 0x0080U: return 'H';
+        case 0x0100U: return 'I';
+        case 0x0200U: return 'J';
+        case 0x0400U: return 'K';
+        case 0x0800U: return 'L';
+        case 0x1000U: return 'M';
+        case 0x2000U: return 'N';
+        case 0x4000U: return 'O';
+        default:      return '?';
+    }
+}
+
+/**
   * @brief  Return human-readable alarm name for a 16-bit ErrorType_e value
   */
 static const char *alarm_type_name(uint16_t t)
@@ -504,4 +605,93 @@ static void format_record_text(const LogRecord_t *rec, char *out, uint16_t out_l
     } else {
         snprintf(out, out_len, "[%lu s] %s\r\n", (unsigned long)ts, event);
     }
+}
+
+/**
+  * @brief  Short format for OLED (one line ~21 chars): "101s BOOT", "2m3s CH2 OP"
+  */
+static void format_record_short(const LogRecord_t *rec, char *out, uint16_t out_len)
+{
+    uint32_t ts = rec->timestamp;
+    char ts_buf[12];
+    char ev_buf[12];
+
+    if (ts >= 3600U) {
+        snprintf(ts_buf, sizeof(ts_buf), "%luh%lum", (unsigned long)(ts / 3600U), (unsigned long)((ts % 3600U) / 60U));
+    } else if (ts >= 60U) {
+        snprintf(ts_buf, sizeof(ts_buf), "%lum%lus", (unsigned long)(ts / 60U), (unsigned long)(ts % 60U));
+    } else {
+        snprintf(ts_buf, sizeof(ts_buf), "%lus", (unsigned long)ts);
+    }
+
+    switch ((LogType_e)rec->type) {
+        case LOG_TYPE_BOOT:           snprintf(ev_buf, sizeof(ev_buf), "BOOT"); break;
+        case LOG_TYPE_SELF_TEST_OK:   snprintf(ev_buf, sizeof(ev_buf), "OK"); break;
+        case LOG_TYPE_SELF_TEST_NG:   snprintf(ev_buf, sizeof(ev_buf), "NG"); break;
+        case LOG_TYPE_CH_OPEN:        snprintf(ev_buf, sizeof(ev_buf), "CH%u OP", (unsigned)rec->param1); break;
+        case LOG_TYPE_CH_CLOSE:       snprintf(ev_buf, sizeof(ev_buf), "CH%u CL", (unsigned)rec->param1); break;
+        case LOG_TYPE_ALARM_SET: {
+            uint16_t at = (uint16_t)((uint16_t)rec->param1 << 8U) | (uint16_t)rec->param2;
+            snprintf(ev_buf, sizeof(ev_buf), "ALM %c", alarm_type_letter(at));
+            break;
+        }
+        case LOG_TYPE_ALARM_CLR: {
+            uint16_t at = (uint16_t)((uint16_t)rec->param1 << 8U) | (uint16_t)rec->param2;
+            snprintf(ev_buf, sizeof(ev_buf), "ALM %c CL", alarm_type_letter(at));
+            break;
+        }
+        case LOG_TYPE_FORMAT:         snprintf(ev_buf, sizeof(ev_buf), "FMT"); break;
+        default:                      snprintf(ev_buf, sizeof(ev_buf), "?"); break;
+    }
+    snprintf(out, out_len, "%-8s %-12s", ts_buf, ev_buf);
+}
+
+/**
+  * @brief  Draw one page of log on OLED (rows 0~5 log lines, row6 page, row7 hint)
+  */
+static void draw_oled_log_page(void)
+{
+    uint8_t raw[LOG_RECORD_SIZE];
+    char line_buf[OLED_LOG_LINE_CHARS + 2];
+    uint32_t i;
+    uint32_t total = s_oled_log_total;
+    uint32_t total_pages = s_oled_log_total_pages;
+    uint32_t read_ptr = s_oled_log_read_ptr;
+    uint32_t cur_page = s_oled_log_cur_page;
+
+    OLED_Clear();
+    if (total == 0U) {
+        OLED_ShowString(0, 0, "No records        ", OLED_FONT_6X8);
+        OLED_ShowString(0, 2, "KEY1: exit        ", OLED_FONT_6X8);
+        OLED_Refresh();
+        return;
+    }
+
+    for (i = 0U; i < OLED_LOG_LINES; i++) {
+        uint32_t rec_off = read_ptr + i * LOG_RECORD_SIZE;
+        if (rec_off >= (total * LOG_RECORD_SIZE)) {
+            OLED_ShowString(0, (uint8_t)i, "                    ", OLED_FONT_6X8);
+            continue;
+        }
+        if (W25Q_Read(LOG_DATA_START_ADDR + rec_off, raw, LOG_RECORD_SIZE) != W25Q_OK) {
+            OLED_ShowString(0, (uint8_t)i, "Read err           ", OLED_FONT_6X8);
+            continue;
+        }
+        if (calc_crc8(raw, (uint8_t)(LOG_RECORD_SIZE - 1U)) != raw[LOG_RECORD_SIZE - 1U] || raw[4] == 0x00U) {
+            OLED_ShowString(0, (uint8_t)i, "-                 ", OLED_FONT_6X8);
+            continue;
+        }
+        {
+            LogRecord_t rec;
+            memcpy(&rec, raw, sizeof(rec));
+            format_record_short(&rec, line_buf, sizeof(line_buf));
+            line_buf[OLED_LOG_LINE_CHARS] = '\0';
+            OLED_ShowString(0, (uint8_t)i, line_buf, OLED_FONT_6X8);
+        }
+    }
+
+    snprintf(line_buf, sizeof(line_buf), "P %lu/%lu  KEY1:next", (unsigned long)(cur_page + 1U), (unsigned long)total_pages);
+    OLED_ShowString(0, 6, line_buf, OLED_FONT_6X8);
+    OLED_ShowString(0, 7, "KEY1 10s: exit     ", OLED_FONT_6X8);
+    OLED_Refresh();
 }
