@@ -270,7 +270,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     if (GPIO_Pin == FAN_SEN_Pin)
     {
-        // 风扇脉冲�?�? - 计数器加1
+        // 风扇测速：FAN_SEN 下降沿触发，计数器加 1
         extern void Temperature_FanPulseISR(void);
         Temperature_FanPulseISR();
     }
@@ -295,3 +295,4 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 }
 
 /* USER CODE END 1 */
+
