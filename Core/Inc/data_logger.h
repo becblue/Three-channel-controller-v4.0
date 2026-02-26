@@ -12,8 +12,8 @@
   *     Sector 1  (0x001000, 4 KB) : Reserved
   *     Sector 2..4095             : Log data area (~16 MB - 8 KB)
   *
-  *   Record format (16 bytes fixed):
-  *     Byte  0-3  : timestamp  (ms since power-on, uint32_t)
+ *   Record format (16 bytes fixed):
+ *     Byte  0-3  : timestamp  (seconds since power-on, uint32_t, ~136 years to overflow)
   *     Byte  4    : type       (LOG_TYPE_xxx)
   *     Byte  5    : param1
   *     Byte  6    : param2
@@ -78,7 +78,7 @@ typedef enum {
  * @brief 16-byte log record layout
  */
 typedef struct {
-    uint32_t timestamp;   /* bytes  0-3  : ms since power-on */
+    uint32_t timestamp;   /* bytes  0-3  : seconds since power-on */
     uint8_t  type;        /* byte   4    : LogType_e */
     uint8_t  param1;      /* byte   5    : type-specific parameter 1 */
     uint8_t  param2;      /* byte   6    : type-specific parameter 2 */

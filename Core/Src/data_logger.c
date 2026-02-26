@@ -116,7 +116,7 @@ void DataLogger_WriteBoot(void)
     LogRecord_t rec;
     if (!s_logger_ready) { return; }
     memset(&rec, 0, sizeof(rec));
-    rec.timestamp = HAL_GetTick();
+    rec.timestamp = HAL_GetTick() / 1000U;   /* seconds since power-on */
     rec.type      = (uint8_t)LOG_TYPE_BOOT;
     rec.crc8      = calc_crc8((uint8_t *)&rec, (uint8_t)(sizeof(rec) - 1U));
     write_record(&rec);
@@ -130,7 +130,7 @@ void DataLogger_WriteChannelAction(uint8_t ch, bool open)
     LogRecord_t rec;
     if (!s_logger_ready) { return; }
     memset(&rec, 0, sizeof(rec));
-    rec.timestamp = HAL_GetTick();
+    rec.timestamp = HAL_GetTick() / 1000U;   /* seconds since power-on */
     rec.type      = open ? (uint8_t)LOG_TYPE_CH_OPEN : (uint8_t)LOG_TYPE_CH_CLOSE;
     rec.param1    = ch;
     rec.crc8      = calc_crc8((uint8_t *)&rec, (uint8_t)(sizeof(rec) - 1U));
@@ -145,7 +145,7 @@ void DataLogger_WriteAlarm(uint16_t alarm_type, bool is_set)
     LogRecord_t rec;
     if (!s_logger_ready) { return; }
     memset(&rec, 0, sizeof(rec));
-    rec.timestamp = HAL_GetTick();
+    rec.timestamp = HAL_GetTick() / 1000U;   /* seconds since power-on */
     rec.type      = is_set ? (uint8_t)LOG_TYPE_ALARM_SET : (uint8_t)LOG_TYPE_ALARM_CLR;
     /* Store 16-bit alarm type across param1 (high byte) and param2 (low byte) */
     rec.param1    = (uint8_t)((alarm_type >> 8U) & 0xFFU);
@@ -240,7 +240,7 @@ void DataLogger_BackgroundTask(void)
             W25Q_SectorErase(LOG_DATA_START_ADDR);
 
             memset(&rec, 0, sizeof(rec));
-            rec.timestamp = HAL_GetTick();
+            rec.timestamp = HAL_GetTick() / 1000U;   /* seconds since power-on */
             rec.type      = (uint8_t)LOG_TYPE_FORMAT;
             rec.crc8      = calc_crc8((uint8_t *)&rec, (uint8_t)(sizeof(rec) - 1U));
             write_record(&rec);
@@ -451,12 +451,11 @@ static const char *alarm_type_name(uint16_t t)
 
 /**
   * @brief  Format one log record into a human-readable line
-  *         Example: "[   1250 ms] CH2 OPEN\r\n"
+  *         Timestamp in seconds; display e.g. "[ 5 s]" or "[ 2 min 3 s]" or "[ 1 h 2 min 3 s]"
   */
 static void format_record_text(const LogRecord_t *rec, char *out, uint16_t out_len)
 {
-    uint32_t ts_s  = rec->timestamp / 1000UL;
-    uint32_t ts_ms = rec->timestamp % 1000UL;
+    uint32_t ts = rec->timestamp;  /* seconds since power-on */
     char event[56] = {0};
 
     switch ((LogType_e)rec->type) {
@@ -494,5 +493,15 @@ static void format_record_text(const LogRecord_t *rec, char *out, uint16_t out_l
             break;
     }
 
-    snprintf(out, out_len, "[%4lu.%03lu s] %s\r\n", ts_s, ts_ms, event);
+    if (ts >= 3600U) {
+        snprintf(out, out_len, "[%lu h %lu min %lu s] %s\r\n",
+                 (unsigned long)(ts / 3600U),
+                 (unsigned long)((ts % 3600U) / 60U),
+                 (unsigned long)(ts % 60U), event);
+    } else if (ts >= 60U) {
+        snprintf(out, out_len, "[%lu min %lu s] %s\r\n",
+                 (unsigned long)(ts / 60U), (unsigned long)(ts % 60U), event);
+    } else {
+        snprintf(out, out_len, "[%lu s] %s\r\n", (unsigned long)ts, event);
+    }
 }
